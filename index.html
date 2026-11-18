@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>注音拼音挑戰｜夜市雙拼 × 九份淘金</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+  </head>
+  <body>
+    <div id="game-container"></div>
+
+    <!-- 頂部懸浮導覽列 -->
+    <header class="hud-top">
+      <div class="hud-group">
+        <div class="segmented-control" role="tablist" aria-label="地圖區域切換">
+          <button class="seg-btn" id="btn-zone-learning" role="tab" aria-selected="false">
+            <span class="ui-icon" data-icon="book"></span>
+            <span>九份學堂</span>
+          </button>
+          <button class="seg-btn active" id="btn-zone-nightmarket" role="tab" aria-selected="true">
+            <span class="ui-icon" data-icon="store"></span>
+            <span>夜市雙拼街</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="hud-group">
+        <div class="hud-metrics" aria-label="學習進度統計">
+          <span class="metric-item">
+            <span class="metric-label">積分</span>
+            <strong class="metric-value" id="hud-score">0</strong>
+          </span>
+          <span class="metric-sep" aria-hidden="true"></span>
+          <span class="metric-item">
+            <span class="metric-label">連勝</span>
+            <strong class="metric-value" id="hud-streak">0</strong>
+          </span>
+        </div>
+
+        <button class="hud-action-btn" id="btn-gold-book" title="開啟 37 符注音圖鑑">
+          <span class="ui-icon" data-icon="coins"></span>
+          <span>金砂圖鑑</span>
+          <strong class="tabular-count" id="hud-gold-count">0/37</strong>
+        </button>
+
+        <button class="hud-action-btn" id="btn-passport" title="開啟 17 攤夜市美食護照">
+          <span class="ui-icon" data-icon="map"></span>
+          <span>夜市護照</span>
+          <strong class="tabular-count" id="hud-stall-count">0/17</strong>
+        </button>
+
+        <button class="hud-action-btn" id="btn-skin" title="切換角色外觀">
+          <span class="ui-icon" data-icon="user"></span>
+          <span id="hud-skin-label">小男孩</span>
+        </button>
+
+        <button class="hud-icon-btn" id="btn-sound" aria-label="切換音效與朗讀" title="切換音效與朗讀">
+          <span class="ui-icon" id="sound-icon-slot" data-icon="volumeOn"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 底部控制列 -->
+    <footer class="hud-bottom">
+      <div class="bottom-left-stack">
+        <div class="camera-bar" role="group" aria-label="視角控制">
+          <span class="cam-title">
+            <span class="ui-icon" data-icon="camera"></span>
+            <span>視角</span>
+          </span>
+          <button class="cam-icon-btn" id="btn-cam-left" aria-label="向左旋轉視角" title="向左旋轉 (Q)">
+            <span class="ui-icon" data-icon="rotateLeft"></span>
+          </button>
+          <button class="cam-icon-btn" id="btn-cam-right" aria-label="向右旋轉視角" title="向右旋轉 (R)">
+            <span class="ui-icon" data-icon="rotateRight"></span>
+          </button>
+          <button class="cam-icon-btn" id="btn-cam-up" aria-label="調高俯角" title="調高俯角">
+            <span class="ui-icon" data-icon="chevronUp"></span>
+          </button>
+          <button class="cam-icon-btn" id="btn-cam-down" aria-label="調低平視角" title="調低平視角">
+            <span class="ui-icon" data-icon="chevronDown"></span>
+          </button>
+          <button class="cam-icon-btn" id="btn-cam-in" aria-label="拉近鏡頭" title="拉近鏡頭">
+            <span class="ui-icon" data-icon="plus"></span>
+          </button>
+          <button class="cam-icon-btn" id="btn-cam-out" aria-label="拉遠鏡頭" title="拉遠鏡頭">
+            <span class="ui-icon" data-icon="minus"></span>
+          </button>
+          <button class="cam-text-btn" id="btn-cam-reset" title="重設預設視角">重置</button>
+        </div>
+
+        <p class="controls-hint">
+          <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向鍵移動 · 拖曳旋轉視角 · 靠近攤位按 <kbd>E</kbd> 或點擊開啟
+        </p>
+      </div>
+
+      <button id="interact-fab" class="interact-fab hidden">
+        <span id="interact-fab-label">開啟互動</span>
+        <span class="ui-icon icon-nudge" data-icon="arrowRight"></span>
+      </button>
+
+      <div class="dpad" aria-label="方向控制鍵">
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" data-x="0" data-z="-1" aria-label="向上移動">
+          <span class="ui-icon" data-icon="chevronUp"></span>
+        </button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" data-x="-1" data-z="0" aria-label="向左移動">
+          <span class="ui-icon" data-icon="chevronLeft"></span>
+        </button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" data-x="1" data-z="0" aria-label="向右移動">
+          <span class="ui-icon" data-icon="chevronRight"></span>
+        </button>
+        <div class="dpad-empty"></div>
+        <button class="dpad-btn" data-x="0" data-z="1" aria-label="向下移動">
+          <span class="ui-icon" data-icon="chevronDown"></span>
+        </button>
+        <div class="dpad-empty"></div>
+      </div>
+    </footer>
+
+    <!-- 彈窗掛載點 -->
+    <div id="modal-root" class="modal-root hidden"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
