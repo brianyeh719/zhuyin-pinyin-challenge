@@ -1,8 +1,7 @@
 import * as THREE from 'three';
+import { assetLoader } from './AssetLoader3D.js';
 import {
   createSignTexture,
-  createStripedAwningTexture,
-  createChalkboardTexture,
   createBubbleSpriteTexture,
   createGlowHaloTexture,
 } from './textureUtils.js';
@@ -15,16 +14,84 @@ function getGlowTexture() {
   return sharedGlowTex;
 }
 
+const VENDOR_MODELS = [
+  '/models/character-female-b.glb',
+  '/models/character-male-b.glb',
+  '/models/character-female-c.glb',
+  '/models/character-male-c.glb',
+];
+
+const FOOD_MODEL_MAP = {
+  boba: [
+    { url: '/assets3d/food/frappe.glb', h: 0.62, x: -0.55, z: 0.12 },
+    { url: '/assets3d/food/frappe.glb', h: 0.56, x: 0.0, z: 0.08 },
+    { url: '/assets3d/food/cup-tea.glb', h: 0.44, x: 0.55, z: 0.12 },
+  ],
+  chicken: [
+    { url: '/assets3d/food/frying-pan.glb', h: 0.34, x: -0.42, z: 0.05 },
+    { url: '/assets3d/food/meat-cooked.glb', h: 0.44, x: 0.35, z: 0.08 },
+  ],
+  stinky_tofu: [
+    { url: '/assets3d/food/pot-stew.glb', h: 0.52, x: -0.45, z: 0.02 },
+    { url: '/assets3d/food/plate-dinner.glb', h: 0.32, x: 0.45, z: 0.1 },
+  ],
+  corn: [
+    { url: '/assets3d/food/corn.glb', h: 0.44, x: -0.5, z: 0.08 },
+    { url: '/assets3d/food/corn.glb', h: 0.44, x: 0.0, z: 0.08 },
+    { url: '/assets3d/food/corn.glb', h: 0.44, x: 0.5, z: 0.08 },
+  ],
+  tanghulu: [
+    { url: '/assets3d/food/skewer.glb', h: 0.62, x: -0.45, z: 0.06 },
+    { url: '/assets3d/food/lollypop.glb', h: 0.58, x: 0.05, z: 0.08 },
+    { url: '/assets3d/food/skewer.glb', h: 0.62, x: 0.5, z: 0.06 },
+  ],
+  dachang: [
+    { url: '/assets3d/food/meat-sausage.glb', h: 0.4, x: -0.38, z: 0.08 },
+    { url: '/assets3d/food/meat-sausage.glb', h: 0.4, x: 0.38, z: 0.08 },
+  ],
+  luwei: [
+    { url: '/assets3d/food/pot-stew.glb', h: 0.52, x: -0.42, z: 0.04 },
+    { url: '/assets3d/food/bowl-broth.glb', h: 0.42, x: 0.42, z: 0.1 },
+  ],
+  pork_ribs: [
+    { url: '/assets3d/food/meat-ribs.glb', h: 0.46, x: -0.35, z: 0.08 },
+    { url: '/assets3d/food/frying-pan.glb', h: 0.34, x: 0.45, z: 0.06 },
+  ],
+  meatball: [
+    { url: '/assets3d/food/steamer.glb', h: 0.48, x: -0.4, z: 0.04 },
+    { url: '/assets3d/food/dim-sum.glb', h: 0.4, x: 0.42, z: 0.1 },
+  ],
+  fish_ball: [
+    { url: '/assets3d/food/bowl-soup.glb', h: 0.46, x: -0.35, z: 0.08 },
+    { url: '/assets3d/food/skewer.glb', h: 0.58, x: 0.45, z: 0.08 },
+  ],
+  guava: [
+    { url: '/assets3d/food/pear.glb', h: 0.44, x: -0.45, z: 0.08 },
+    { url: '/assets3d/food/cutting-board.glb', h: 0.25, x: 0.35, z: 0.06 },
+    { url: '/assets3d/food/pear.glb', h: 0.42, x: 0.35, z: 0.06, yOff: 0.08 },
+  ],
+  fried_squid: [
+    { url: '/assets3d/food/frying-pan.glb', h: 0.34, x: -0.45, z: 0.06 },
+    { url: '/assets3d/food/fish.glb', h: 0.42, x: 0.38, z: 0.1 },
+  ],
+  duck_head: [
+    { url: '/assets3d/food/turkey.glb', h: 0.5, x: -0.32, z: 0.08 },
+    { url: '/assets3d/food/chinese.glb', h: 0.44, x: 0.48, z: 0.1 },
+  ],
+  mochi: [
+    { url: '/assets3d/food/rice-ball.glb', h: 0.38, x: -0.42, z: 0.08 },
+    { url: '/assets3d/food/rice-ball.glb', h: 0.38, x: 0.05, z: 0.08 },
+    { url: '/assets3d/food/skewer.glb', h: 0.56, x: 0.52, z: 0.06 },
+  ],
+};
+
 /**
- * 獨立 3D Q版攤位與學習設施物件（Stall3D）
- * 每個攤位皆為獨立物件，包含：
- * - 獨立位置、碰撞框、互動半徑與 Raycast 點擊識別
- * - 狀態機：'idle' | 'proximity' | 'action' | 'celebrate'
- * - 專屬待機 (idle) 與互動動作 (action) 3D 動畫與粒子特效
+ * 獨立 3D 攤位與學習設施物件（採用 Kenney CC0 精緻 3D 模型與骨架動畫）
  */
 export class Stall3D {
-  constructor(config) {
+  constructor(config, index = 0) {
     this.config = config;
+    this.index = index;
     this.id = config.id;
     this.name = config.name;
     this.animType = config.animType || 'steam_ladle';
@@ -32,8 +99,8 @@ export class Stall3D {
     this.group = new THREE.Group();
     this.group.position.set(config.worldX, 0, config.worldZ);
 
-    this.width = this.animType === 'claw_grab' ? 2.8 : 3.8;
-    this.depth = this.animType === 'claw_grab' ? 2.4 : 2.6;
+    this.width = this.animType === 'claw_grab' || this.animType === 'pinball_launch' ? 2.6 : 3.5;
+    this.depth = this.animType === 'claw_grab' || this.animType === 'pinball_launch' ? 2.4 : 2.5;
 
     this.state = 'idle';
     this.cleared = false;
@@ -42,13 +109,18 @@ export class Stall3D {
     this.actionTimer = 0;
     this.actionDuration = 2.4;
 
-    this.animatedParts = {};
+    this.mixers = [];
+    this.vendorActions = {};
+    this.activeVendorAnim = null;
+    this.showcaseProps = [];
+    this.fishes = [];
     this.lanterns = [];
     this.particles = [];
     this.particleGroup = new THREE.Group();
     this.group.add(this.particleGroup);
 
-    this._buildMesh();
+    this._buildShell();
+    this._loadArtAssets();
   }
 
   getCollider() {
@@ -65,14 +137,18 @@ export class Stall3D {
   getInteractPoint() {
     return {
       x: this.config.worldX,
-      z: this.config.worldZ + this.depth * 0.88,
+      z: this.config.worldZ + this.depth * 0.92,
     };
   }
 
   distanceTo(px, pz) {
     const dx = Math.max(0, Math.abs(px - this.config.worldX) - this.width * 0.45);
     const dz = Math.max(0, Math.abs(pz - this.config.worldZ) - this.depth * 0.45);
-    return Math.hypot(dx, dz);
+    return Math.hypot(dx, dyToZ(dz));
+
+    function dyToZ(v) {
+      return v;
+    }
   }
 
   setCleared(val) {
@@ -85,10 +161,27 @@ export class Stall3D {
   triggerAction(message = '', celebrate = false) {
     this.state = celebrate ? 'celebrate' : 'action';
     this.actionTimer = this.actionDuration;
-    this._spawnParticles(celebrate ? 18 : 10, true);
+    this._playVendorAction(celebrate ? 'emote-yes' : 'interact-right');
+    this._spawnParticles(celebrate ? 14 : 8, true);
     if (message) {
       this._setBubble(message, 'action');
     }
+  }
+
+  _playVendorAction(name) {
+    if (!this.vendorMixer) return;
+    let target = name;
+    if (!this.vendorActions[target]) {
+      target = this.vendorActions.idle ? 'idle' : Object.keys(this.vendorActions)[0];
+    }
+    if (!target || target === this.activeVendorAnim) return;
+    const next = this.vendorActions[target];
+    const prev = this.activeVendorAnim ? this.vendorActions[this.activeVendorAnim] : null;
+    next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
+    if (prev && prev !== next) {
+      prev.crossFadeTo(next, 0.2, true);
+    }
+    this.activeVendorAnim = target;
   }
 
   _setBubble(text, variant = 'prompt') {
@@ -107,15 +200,15 @@ export class Stall3D {
     this.bubbleSprite.visible = true;
   }
 
-  _buildMesh() {
-    // 1. 地面互動發光環
+  _buildShell() {
+    // 1. 地面互動光環
     const ringGeo = new THREE.RingGeometry(
       Math.max(this.width, this.depth) * 0.56,
-      Math.max(this.width, this.depth) * 0.64,
+      Math.max(this.width, this.depth) * 0.63,
       36
     );
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xfde047,
+      color: 0xfbbf24,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.0,
@@ -125,59 +218,39 @@ export class Stall3D {
     this.proximityRing.position.y = 0.03;
     this.group.add(this.proximityRing);
 
-    // 2. 攤位本體根節點
     this.bodyGroup = new THREE.Group();
     this.group.add(this.bodyGroup);
 
-    if (this.animType === 'claw_grab') {
-      this._buildClawMachine();
-    } else if (this.animType === 'fish_scoop') {
-      this._buildGoldfishPool();
-    } else if (this.animType === 'pinball_launch') {
-      this._buildPinballArcade();
-    } else if (this.animType === 'gold_pan') {
-      this._buildGoldPanStation();
-    } else if (this.animType === 'zhuyin_board') {
-      this._buildZhuyinBoardStation();
-    } else if (this.animType === 'combo_lab') {
-      this._buildComboLabStation();
-    } else {
-      this._buildFoodStall();
-    }
-
-    // 3. 通用招牌（斜向鏡頭，清楚易讀且不遮擋店員與商品）
+    // 2. 通用招牌
     this._buildSignboard();
 
-    // 4. 通關金星徽章
-    const starGeo = new THREE.OctahedronGeometry(0.32, 0);
+    // 3. 通關星徽
+    const starGeo = new THREE.OctahedronGeometry(0.28, 0);
     const starMat = new THREE.MeshStandardMaterial({
       color: 0xfde047,
       emissive: 0xf59e0b,
-      emissiveIntensity: 0.85,
-      metalness: 0.3,
+      emissiveIntensity: 0.75,
+      metalness: 0.35,
       roughness: 0.2,
     });
     this.starBadge = new THREE.Mesh(starGeo, starMat);
-    this.starBadge.position.set(this.width * 0.44, 3.65, 0.9);
+    this.starBadge.position.set(this.width * 0.42, 4.1, 0.85);
     this.starBadge.visible = false;
     this.bodyGroup.add(this.starBadge);
 
-    // 5. 漂浮文字提示 Sprite
-    const spriteMat = new THREE.SpriteMaterial({
-      transparent: true,
-      depthTest: false,
-    });
-    this.bubbleSprite = new THREE.Sprite(spriteMat);
-    this.bubbleSprite.position.set(0, 4.45, 0.4);
+    // 4. 漂浮文字氣泡
+    this.bubbleSprite = new THREE.Sprite(
+      new THREE.SpriteMaterial({ transparent: true, depthTest: false })
+    );
+    this.bubbleSprite.position.set(0, 4.85, 0.4);
     this.bubbleSprite.scale.set(4.1, 0.9, 1);
     this.bubbleSprite.visible = false;
     this.group.add(this.bubbleSprite);
 
-    // 6. Raycast 點擊盒
-    const hitGeo = new THREE.BoxGeometry(this.width, 3.8, this.depth);
-    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
-    this.hitMesh = new THREE.Mesh(hitGeo, hitMat);
-    this.hitMesh.position.y = 1.9;
+    // 5. Raycast 點擊感應區
+    const hitGeo = new THREE.BoxGeometry(this.width, 4.0, this.depth);
+    this.hitMesh = new THREE.Mesh(hitGeo, new THREE.MeshBasicMaterial({ visible: false }));
+    this.hitMesh.position.y = 2.0;
     this.hitMesh.userData.stallId = this.id;
     this.group.add(this.hitMesh);
   }
@@ -189,690 +262,323 @@ export class Stall3D {
       this.config.signBg || '#fff7e6',
       this.config.awningColors?.[0] || '#d97706'
     );
-    const signGeo = new THREE.BoxGeometry(2.85, 0.96, 0.14);
+    const signGeo = new THREE.BoxGeometry(2.65, 0.88, 0.12);
     const frontMat = new THREE.MeshStandardMaterial({
       map: tex,
-      roughness: 0.55,
+      roughness: 0.5,
       emissive: 0xfff5d6,
       emissiveMap: tex,
-      emissiveIntensity: 0.1,
+      emissiveIntensity: 0.12,
     });
-    const sideMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.65 });
+    const sideMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.7 });
     const sign = new THREE.Mesh(signGeo, [sideMat, sideMat, sideMat, sideMat, frontMat, sideMat]);
 
-    const isFood =
-      this.animType !== 'claw_grab' &&
-      this.animType !== 'fish_scoop' &&
-      this.animType !== 'pinball_launch' &&
-      this.animType !== 'gold_pan' &&
-      this.animType !== 'zhuyin_board' &&
-      this.animType !== 'combo_lab';
+    const isArcade = this.animType === 'claw_grab' || this.animType === 'pinball_launch';
+    const isLearning =
+      this.animType === 'gold_pan' || this.animType === 'zhuyin_board' || this.animType === 'combo_lab';
 
-    const signY = isFood ? 3.12 : this.animType === 'claw_grab' ? 3.22 : 2.75;
-    const signZ = isFood ? 1.12 : 0.72;
-    sign.position.set(0, signY, signZ);
-    sign.rotation.x = -0.22; // 微微仰角面向斜上方攝影機，文字超清晰！
+    sign.position.set(0, isArcade ? 3.5 : isLearning ? 2.95 : 3.55, isArcade ? 0.5 : 1.05);
+    sign.rotation.x = -0.22;
     sign.castShadow = true;
     this.bodyGroup.add(sign);
   }
 
-  _addLantern(x, y, z) {
+  async _loadArtAssets() {
+    if (this.animType === 'claw_grab') {
+      await this._loadClawMachine();
+    } else if (this.animType === 'pinball_launch') {
+      await this._loadPinballArcade();
+    } else if (this.animType === 'fish_scoop') {
+      await this._loadGoldfishPool();
+    } else if (this.animType === 'gold_pan') {
+      await this._loadGoldPanStation();
+    } else if (this.animType === 'zhuyin_board') {
+      await this._loadZhuyinBoardStation();
+    } else if (this.animType === 'combo_lab') {
+      await this._loadComboLabStation();
+    } else {
+      await this._loadFoodStall();
+    }
+  }
+
+  async _loadFoodStall() {
+    // 1. 攤位主體（交錯使用 Kenney 紅棚與綠棚精緻木攤）
+    const stallUrl =
+      this.index % 2 === 0 ? '/assets3d/town/stall-red.glb' : '/assets3d/town/stall-green.glb';
+    const { object: stallObj } = await assetLoader.createInstance(stallUrl, {
+      targetHeight: 3.9,
+    });
+    // 旋轉 90° 使正面敞開朝向 +Z 廣場與鏡頭
+    stallObj.rotation.y = Math.PI / 2;
+    this.bodyGroup.add(stallObj);
+
+    // 2. 攤位前緣垂吊小紅燈籠
+    await this._attachHangingLantern(-1.45, 2.75, 1.08);
+    await this._attachHangingLantern(1.45, 2.75, 1.08);
+
+    // 3. 攤內暖光光暈
+    const glow = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: getGlowTexture(),
+        color: 0xffd280,
+        transparent: true,
+        opacity: 0.34,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    glow.scale.set(2.8, 2.0, 1);
+    glow.position.set(0, 1.9, 0.1);
+    this.bodyGroup.add(glow);
+
+    // 4. 精緻 3D 骨架動畫店員（Kenney Mini-Characters）
+    const vendorUrl = VENDOR_MODELS[this.index % VENDOR_MODELS.length];
+    const { object: vendorObj, animations } = await assetLoader.createInstance(vendorUrl, {
+      targetHeight: 1.85,
+    });
+    vendorObj.position.set(0, 0, -0.58);
+    this.bodyGroup.add(vendorObj);
+
+    if (animations.length > 0) {
+      this.vendorMixer = new THREE.AnimationMixer(vendorObj);
+      animations.forEach((clip) => {
+        this.vendorActions[clip.name] = this.vendorMixer.clipAction(clip);
+      });
+      this.mixers.push(this.vendorMixer);
+      this._playVendorAction('idle');
+    }
+
+    // 5. 櫃台上的專屬 3D 食物模型（y = 1.18 桌面高度）
+    const foods = FOOD_MODEL_MAP[this.id] || [
+      { url: '/assets3d/food/bowl-soup.glb', h: 0.45, x: 0, z: 0.08 },
+    ];
+    const counterTopY = 1.16;
+    const counterZ = 0.62;
+
+    for (const item of foods) {
+      const { object: foodObj } = await assetLoader.createInstance(item.url, {
+        targetHeight: item.h,
+      });
+      const baseY = counterTopY + (item.yOff || 0);
+      foodObj.position.set(item.x, baseY, counterZ + (item.z || 0));
+      foodObj.userData.baseY = baseY;
+      this.bodyGroup.add(foodObj);
+      this.showcaseProps.push(foodObj);
+    }
+
+    // 6. 旁側小板凳裝飾
+    const { object: stool } = await assetLoader.createInstance('/assets3d/town/stall-stool.glb', {
+      targetHeight: 0.55,
+    });
+    stool.position.set(1.9, 0, 0.65);
+    this.bodyGroup.add(stool);
+  }
+
+  async _loadClawMachine() {
+    const { object, animations } = await assetLoader.createInstance('/assets3d/arcade/claw-machine.glb', {
+      targetHeight: 3.1,
+    });
+    this.bodyGroup.add(object);
+
+    if (animations.length > 0) {
+      const mixer = new THREE.AnimationMixer(object);
+      const act = mixer.clipAction(animations[0]);
+      act.play();
+      this.mixers.push(mixer);
+      this.clawMixer = mixer;
+      this.clawAction = act;
+    }
+
+    const { object: stool } = await assetLoader.createInstance('/assets3d/town/stall-stool.glb', {
+      targetHeight: 0.52,
+    });
+    stool.position.set(0, 0, 1.35);
+    this.bodyGroup.add(stool);
+  }
+
+  async _loadPinballArcade() {
+    const { object } = await assetLoader.createInstance('/assets3d/arcade/pinball.glb', {
+      targetHeight: 2.75,
+    });
+    this.bodyGroup.add(object);
+
+    const { object: prizes } = await assetLoader.createInstance('/assets3d/arcade/prizes.glb', {
+      targetHeight: 1.4,
+    });
+    prizes.position.set(1.35, 0, 0.2);
+    this.bodyGroup.add(prizes);
+  }
+
+  async _loadGoldfishPool() {
+    // 1. 低矮木檯底座與清澈藍綠水池
+    const { object: table } = await assetLoader.createInstance('/assets3d/town/stall.glb', {
+      targetHeight: 0.85,
+    });
+    table.rotation.y = Math.PI / 2;
+    table.scale.x *= 1.35;
+    table.scale.z *= 1.45;
+    this.bodyGroup.add(table);
+
+    const water = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.25, 1.25, 0.14, 28),
+      new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.22,
+        transparent: true,
+        opacity: 0.82,
+        roughness: 0.15,
+      })
+    );
+    water.position.set(0, 0.88, 0.05);
+    this.bodyGroup.add(water);
+
+    // 2. 真實 3D 魚模型游動
+    for (let i = 0; i < 4; i++) {
+      const { object: fish } = await assetLoader.createInstance('/assets3d/food/fish.glb', {
+        targetHeight: 0.28,
+      });
+      fish.position.set(0, 0.94, 0.05);
+      this.bodyGroup.add(fish);
+      this.fishes.push(fish);
+    }
+
+    // 3. 木凳
+    for (const sx of [-0.9, 0.9]) {
+      const { object: stool } = await assetLoader.createInstance('/assets3d/town/stall-stool.glb', {
+        targetHeight: 0.5,
+      });
+      stool.position.set(sx, 0, 1.35);
+      this.bodyGroup.add(stool);
+    }
+  }
+
+  async _loadGoldPanStation() {
+    const { object: table } = await assetLoader.createInstance('/assets3d/town/stall.glb', {
+      targetHeight: 0.92,
+    });
+    table.rotation.y = Math.PI / 2;
+    this.bodyGroup.add(table);
+
+    const { object: pan } = await assetLoader.createInstance('/assets3d/food/frying-pan.glb', {
+      targetHeight: 0.45,
+    });
+    pan.position.set(0, 0.95, 0.1);
+    pan.userData.baseY = 0.95;
+    this.bodyGroup.add(pan);
+    this.showcaseProps.push(pan);
+
+    await this._attachHangingLantern(-1.3, 2.2, 0.6);
+    await this._attachHangingLantern(1.3, 2.2, 0.6);
+  }
+
+  async _loadZhuyinBoardStation() {
+    const { object: table } = await assetLoader.createInstance('/assets3d/town/stall-green.glb', {
+      targetHeight: 3.4,
+    });
+    table.rotation.y = Math.PI / 2;
+    this.bodyGroup.add(table);
+
+    const { object: vendor } = await assetLoader.createInstance('/models/character-female-b.glb', {
+      targetHeight: 1.8,
+    });
+    vendor.position.set(0, 0, -0.5);
+    this.bodyGroup.add(vendor);
+
+    await this._attachHangingLantern(-1.4, 2.4, 0.9);
+    await this._attachHangingLantern(1.4, 2.4, 0.9);
+  }
+
+  async _loadComboLabStation() {
+    const { object: table } = await assetLoader.createInstance('/assets3d/town/stall.glb', {
+      targetHeight: 0.95,
+    });
+    table.rotation.y = Math.PI / 2;
+    this.bodyGroup.add(table);
+
+    const { object: bowl } = await assetLoader.createInstance('/assets3d/food/dim-sum.glb', {
+      targetHeight: 0.48,
+    });
+    bowl.position.set(-0.45, 0.96, 0.08);
+    bowl.userData.baseY = 0.96;
+    const { object: tea } = await assetLoader.createInstance('/assets3d/food/cup-tea.glb', {
+      targetHeight: 0.48,
+    });
+    tea.position.set(0.45, 0.96, 0.08);
+    tea.userData.baseY = 0.96;
+    this.bodyGroup.add(bowl, tea);
+    this.showcaseProps.push(bowl, tea);
+  }
+
+  async _attachHangingLantern(x, y, z) {
     const pivot = new THREE.Group();
     pivot.position.set(x, y, z);
 
-    const cord = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.022, 0.2, 6),
-      new THREE.MeshBasicMaterial({ color: 0x3b1d0c })
-    );
-    cord.position.y = -0.1;
-    pivot.add(cord);
+    const { object: lanternObj } = await assetLoader.createInstance('/assets3d/holiday/lantern-hanging.glb', {
+      targetHeight: 0.62,
+      alignBottom: false,
+    });
+    lanternObj.position.set(0, -0.32, 0);
+    pivot.add(lanternObj);
 
-    const bulb = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2, 12, 10),
-      new THREE.MeshStandardMaterial({
-        color: 0xff5a36,
-        emissive: 0xff6b2b,
-        emissiveIntensity: 1.15,
-        roughness: 0.35,
-      })
-    );
-    bulb.scale.set(1, 1.18, 1);
-    bulb.position.y = -0.32;
-    pivot.add(bulb);
-
-    // 暖橘色發光光暈 Sprite
     const halo = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: getGlowTexture(),
         color: 0xffb347,
         transparent: true,
-        opacity: 0.65,
+        opacity: 0.45,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       })
     );
-    halo.scale.set(1.35, 1.35, 1);
-    halo.position.y = -0.32;
+    halo.scale.set(1.3, 1.3, 1);
+    halo.position.set(0, -0.35, 0);
     pivot.add(halo);
 
-    const capMat = new THREE.MeshStandardMaterial({ color: 0xfde047 });
-    const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 8), capMat);
-    capTop.position.y = -0.14;
-    const capBot = capTop.clone();
-    capBot.position.y = -0.5;
-    pivot.add(capTop, capBot);
-
     this.bodyGroup.add(pivot);
-    this.lanterns.push({ pivot, bulb, halo });
-  }
-
-  _buildVendor(style) {
-    if (!style) return;
-    const vendor = new THREE.Group();
-    // 站得稍微高一點讓 Q 版頭臉完全從櫃台後方露出來
-    vendor.position.set(0, 1.08, -0.25);
-
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdcc0, roughness: 0.65 });
-    const apronMat = new THREE.MeshStandardMaterial({ color: style.apron || '#e11d48', roughness: 0.6 });
-    const hairMat = new THREE.MeshStandardMaterial({ color: style.hair || '#4a2e1b', roughness: 0.8 });
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e130d });
-    const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const blushMat = new THREE.MeshBasicMaterial({ color: 0xff8da1, transparent: true, opacity: 0.65 });
-
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.58, 0.4), apronMat);
-    torso.position.y = 0.28;
-    vendor.add(torso);
-
-    // 圓滾滾 Q 版大頭
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 16), skinMat);
-    head.position.y = 0.84;
-    vendor.add(head);
-
-    // 萌萌大眼睛＋反光高光點
-    [-0.13, 0.13].forEach((ex) => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.052, 8, 8), eyeMat);
-      eye.position.set(ex, 0.84, 0.36);
-      const shine = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), shineMat);
-      shine.position.set(ex + 0.02, 0.86, 0.4);
-      vendor.add(eye, shine);
-    });
-
-    // 粉紅腮紅
-    [-0.22, 0.22].forEach((bx) => {
-      const blush = new THREE.Mesh(new THREE.CircleGeometry(0.065, 10), blushMat);
-      blush.position.set(bx, 0.76, 0.37);
-      vendor.add(blush);
-    });
-
-    const hair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.42, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
-      hairMat
-    );
-    hair.position.y = 0.86;
-    vendor.add(hair);
-
-    // 頭飾
-    if (style.hat === 'straw') {
-      const brim = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.66, 0.7, 0.06, 18),
-        new THREE.MeshStandardMaterial({ color: 0xf3cc6e })
-      );
-      brim.position.y = 1.14;
-      const dome = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.28, 0.42, 0.2, 14),
-        new THREE.MeshStandardMaterial({ color: 0xe5b954 })
-      );
-      dome.position.y = 1.25;
-      vendor.add(brim, dome);
-    } else if (style.hat === 'headband') {
-      const band = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.41, 0.41, 0.11, 18),
-        new THREE.MeshStandardMaterial({ color: 0xffffff })
-      );
-      band.position.y = 1.02;
-      vendor.add(band);
-    } else if (style.hat === 'ribbon_red') {
-      const bow = new THREE.Mesh(
-        new THREE.BoxGeometry(0.42, 0.16, 0.14),
-        new THREE.MeshStandardMaterial({ color: 0xfb7185 })
-      );
-      bow.position.set(0, 1.22, 0.06);
-      vendor.add(bow);
-    } else if (style.hat?.startsWith('cap')) {
-      const capColor = style.hat === 'cap_red' ? 0xef4444 : 0x475569;
-      const cap = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.46),
-        new THREE.MeshStandardMaterial({ color: capColor })
-      );
-      cap.position.y = 0.94;
-      const visor = new THREE.Mesh(
-        new THREE.BoxGeometry(0.46, 0.05, 0.3),
-        new THREE.MeshStandardMaterial({ color: capColor })
-      );
-      visor.position.set(0, 1.06, 0.34);
-      vendor.add(cap, visor);
-    }
-
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8), skinMat);
-    arm.position.set(0.44, 0.44, 0.18);
-    arm.rotation.z = -0.4;
-    vendor.add(arm);
-
-    this.bodyGroup.add(vendor);
-    this.animatedParts.vendor = vendor;
-    this.animatedParts.vendorArm = arm;
-  }
-
-  _buildFoodStall() {
-    const [c1, c2] = this.config.awningColors || ['#e84a3c', '#fff8ec'];
-    const woodMid = new THREE.MeshStandardMaterial({ color: 0xb8703b, roughness: 0.72 });
-    const woodLight = new THREE.MeshStandardMaterial({ color: 0xe39e62, roughness: 0.62 });
-    const warmInteriorMat = new THREE.MeshStandardMaterial({
-      color: 0xe3b886,
-      emissive: 0xd98a3b,
-      emissiveIntensity: 0.14,
-      roughness: 0.85,
-    });
-
-    // 攤車木頭櫃台底座（更暖亮的木色）
-    const counter = new THREE.Mesh(new THREE.BoxGeometry(3.45, 1.05, 1.45), woodMid);
-    counter.position.set(0, 0.525, 0.42);
-    counter.castShadow = true;
-    counter.receiveShadow = true;
-    this.bodyGroup.add(counter);
-
-    // 圓潤檯面桌面
-    const topSlab = new THREE.Mesh(new THREE.BoxGeometry(3.65, 0.14, 1.65), woodLight);
-    topSlab.position.set(0, 1.08, 0.44);
-    topSlab.castShadow = true;
-    this.bodyGroup.add(topSlab);
-
-    // 溫暖明亮的攤位後背板
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(3.35, 2.5, 0.18), warmInteriorMat);
-    backWall.position.set(0, 1.25, -0.88);
-    backWall.castShadow = true;
-    this.bodyGroup.add(backWall);
-
-    // 四角木柱
-    const postGeo = new THREE.CylinderGeometry(0.09, 0.09, 2.65, 10);
-    [-1.62, 1.62].forEach((px) => {
-      const pFront = new THREE.Mesh(postGeo, woodMid);
-      pFront.position.set(px, 1.325, 1.05);
-      const pBack = new THREE.Mesh(postGeo, woodMid);
-      pBack.position.set(px, 1.325, -0.85);
-      this.bodyGroup.add(pFront, pBack);
-    });
-
-    // 抬高並適度前傾的條紋遮雨棚，確保能清楚看到內部店員與美食！
-    const awningTex = createStripedAwningTexture(c1, c2, 7);
-    const awningMat = new THREE.MeshStandardMaterial({
-      map: awningTex,
-      roughness: 0.6,
-      emissive: 0xffe4b5,
-      emissiveMap: awningTex,
-      emissiveIntensity: 0.05,
-    });
-    const awning = new THREE.Mesh(new THREE.BoxGeometry(3.85, 0.14, 2.2), awningMat);
-    awning.position.set(0, 2.74, 0.08);
-    awning.rotation.x = 0.18;
-    awning.castShadow = true;
-    this.bodyGroup.add(awning);
-
-    // 可愛波浪棚緣飾球
-    const scallopCount = 7;
-    for (let i = 0; i < scallopCount; i++) {
-      const sx = -1.6 + (i * 3.2) / (scallopCount - 1);
-      const col = i % 2 === 0 ? c1 : c2;
-      const puff = new THREE.Mesh(
-        new THREE.SphereGeometry(0.24, 10, 8),
-        new THREE.MeshStandardMaterial({ color: col, roughness: 0.55 })
-      );
-      puff.scale.set(1.15, 0.65, 0.6);
-      puff.position.set(sx, 2.52, 1.15);
-      this.bodyGroup.add(puff);
-    }
-
-    // 內部暖色燈光光暈
-    const interiorGlow = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: getGlowTexture(),
-        color: 0xffd280,
-        transparent: true,
-        opacity: 0.36,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      })
-    );
-    interiorGlow.scale.set(3.2, 2.2, 1);
-    interiorGlow.position.set(0, 1.85, 0.15);
-    this.bodyGroup.add(interiorGlow);
-
-    // 兩側懸掛紅燈籠
-    this._addLantern(-1.76, 2.38, 1.22);
-    this._addLantern(1.76, 2.38, 1.22);
-
-    // 右側小黑板菜單（對應參考圖）
-    const chalkFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.55, 0.78, 0.08),
-      woodLight
-    );
-    chalkFrame.position.set(1.98, 0.55, 1.02);
-    chalkFrame.rotation.y = -0.35;
-    chalkFrame.rotation.x = -0.15;
-    const chalkFace = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.45, 0.65),
-      new THREE.MeshStandardMaterial({ color: 0x26353a })
-    );
-    chalkFace.position.set(0, 0, 0.045);
-    chalkFrame.add(chalkFace);
-    this.bodyGroup.add(chalkFrame);
-
-    // 店員
-    this._buildVendor(this.config.vendorStyle);
-
-    // 櫃台專屬商品道具（移向前緣，清楚可見！）
-    this._buildCounterProps();
-  }
-
-  _buildCounterProps() {
-    const propsGroup = new THREE.Group();
-    propsGroup.position.set(0, 1.16, 0.74);
-    this.bodyGroup.add(propsGroup);
-    this.animatedParts.props = [];
-
-    if (this.animType === 'shake_drink') {
-      const cupMat = new THREE.MeshStandardMaterial({ color: 0xfff3dc, transparent: true, opacity: 0.94 });
-      const teaMat = new THREE.MeshStandardMaterial({ color: 0xc98249 });
-      const strawMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8 });
-      for (let i = -1; i <= 1; i++) {
-        const cupGroup = new THREE.Group();
-        cupGroup.position.set(i * 0.75, 0, 0);
-        const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.15, 0.54, 14), cupMat);
-        cup.position.y = 0.27;
-        const tea = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.4, 14), teaMat);
-        tea.position.y = 0.21;
-        const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.36, 8), strawMat);
-        straw.position.set(0.04, 0.58, 0);
-        straw.rotation.z = -0.15;
-        cupGroup.add(cup, tea, straw);
-        propsGroup.add(cupGroup);
-        this.animatedParts.props.push(cupGroup);
-      }
-    } else if (this.animType === 'charcoal_grill') {
-      const grill = new THREE.Mesh(
-        new THREE.BoxGeometry(2.4, 0.14, 0.85),
-        new THREE.MeshStandardMaterial({ color: 0x334155 })
-      );
-      grill.position.y = 0.07;
-      const emberMat = new THREE.MeshStandardMaterial({
-        color: 0xff6b35,
-        emissive: 0xff5500,
-        emissiveIntensity: 1.15,
-      });
-      const ember = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.06, 0.7), emberMat);
-      ember.position.y = 0.15;
-      propsGroup.add(grill, ember);
-      this.animatedParts.emberMat = emberMat;
-
-      const itemColor = this.id === 'mochi' ? 0xfffaf0 : this.id === 'dachang' ? 0xe07b28 : 0xfde047;
-      for (let i = 0; i < 4; i++) {
-        const food = new THREE.Mesh(
-          new THREE.CapsuleGeometry(0.14, 0.36, 6, 10),
-          new THREE.MeshStandardMaterial({ color: itemColor, roughness: 0.45 })
-        );
-        food.rotation.x = Math.PI / 2;
-        food.position.set(-0.82 + i * 0.55, 0.3, 0);
-        propsGroup.add(food);
-        this.animatedParts.props.push(food);
-      }
-    } else if (this.animType === 'glaze_sparkle') {
-      const stand = new THREE.Mesh(
-        new THREE.BoxGeometry(2.2, 0.12, 0.65),
-        new THREE.MeshStandardMaterial({ color: 0xb45309 })
-      );
-      stand.position.y = 0.06;
-      propsGroup.add(stand);
-
-      const ballColor = this.id === 'guava' ? 0x84cc16 : 0xef4444;
-      for (let i = 0; i < 4; i++) {
-        const skewer = new THREE.Group();
-        skewer.position.set(-0.82 + i * 0.55, 0.12, 0);
-        const stick = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.025, 0.025, 0.78, 6),
-          new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
-        );
-        stick.position.y = 0.39;
-        skewer.add(stick);
-        for (let b = 0; b < 3; b++) {
-          const berry = new THREE.Mesh(
-            new THREE.SphereGeometry(0.125, 10, 10),
-            new THREE.MeshStandardMaterial({ color: ballColor, roughness: 0.2, metalness: 0.1 })
-          );
-          berry.position.y = 0.3 + b * 0.21;
-          skewer.add(berry);
-        }
-        propsGroup.add(skewer);
-        this.animatedParts.props.push(skewer);
-      }
-    } else {
-      const tray = new THREE.Mesh(
-        new THREE.BoxGeometry(2.35, 0.16, 0.9),
-        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.35, roughness: 0.25 })
-      );
-      tray.position.y = 0.08;
-      propsGroup.add(tray);
-
-      const itemColor = this.animType === 'sizzle_fry' ? 0xfbbf24 : 0xd97706;
-      for (let i = 0; i < 4; i++) {
-        const piece = new THREE.Mesh(
-          new THREE.SphereGeometry(0.21, 12, 10),
-          new THREE.MeshStandardMaterial({ color: itemColor, roughness: 0.45 })
-        );
-        piece.scale.set(1.25, 0.8, 1.0);
-        piece.position.set(-0.78 + i * 0.52, 0.27, (i % 2) * 0.12 - 0.06);
-        propsGroup.add(piece);
-        this.animatedParts.props.push(piece);
-      }
-    }
-  }
-
-  _buildClawMachine() {
-    const pinkMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.45 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xfff1f2, roughness: 0.45 });
-    const glassMat = new THREE.MeshStandardMaterial({
-      color: 0xe0f2fe,
-      transparent: true,
-      opacity: 0.32,
-      roughness: 0.1,
-    });
-
-    const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.15, 1.8), pinkMat);
-    base.position.y = 0.575;
-    base.castShadow = true;
-    this.bodyGroup.add(base);
-
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.45, 1.9), pinkMat);
-    roof.position.y = 2.72;
-    roof.castShadow = true;
-    this.bodyGroup.add(roof);
-
-    const postGeo = new THREE.BoxGeometry(0.18, 1.45, 0.18);
-    [
-      [-1.0, -0.8],
-      [1.0, -0.8],
-      [-1.0, 0.8],
-      [1.0, 0.8],
-    ].forEach(([px, pz]) => {
-      const post = new THREE.Mesh(postGeo, whiteMat);
-      post.position.set(px, 1.8, pz);
-      this.bodyGroup.add(post);
-    });
-
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(2.02, 1.38, 1.62), glassMat);
-    glass.position.y = 1.8;
-    this.bodyGroup.add(glass);
-
-    // 內照明背板
-    const innerPanel = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.9, 1.3),
-      new THREE.MeshBasicMaterial({ color: 0xffe4f2 })
-    );
-    innerPanel.position.set(0, 1.8, -0.78);
-    this.bodyGroup.add(innerPanel);
-
-    const bearMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.75 });
-    this.animatedParts.bears = [];
-    [-0.55, 0, 0.55].forEach((bx, idx) => {
-      const bear = new THREE.Group();
-      bear.position.set(bx, 1.35, 0);
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), bearMat);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), bearMat);
-      head.position.y = 0.28;
-      const earL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), bearMat);
-      earL.position.set(-0.14, 0.42, 0);
-      const earR = earL.clone();
-      earR.position.x = 0.14;
-      bear.add(body, head, earL, earR);
-      this.bodyGroup.add(bear);
-      this.animatedParts.bears.push(bear);
-      if (idx === 1) this.animatedParts.targetBear = bear;
-    });
-
-    const crane = new THREE.Group();
-    crane.position.set(0, 2.45, 0);
-    const cable = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8),
-      new THREE.MeshStandardMaterial({ color: 0x64748b })
-    );
-    cable.position.y = -0.25;
-    const clawHead = new THREE.Mesh(
-      new THREE.ConeGeometry(0.18, 0.24, 6),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.5 })
-    );
-    clawHead.position.y = -0.52;
-    crane.add(cable, clawHead);
-    this.bodyGroup.add(crane);
-    this.animatedParts.crane = crane;
-  }
-
-  _buildGoldfishPool() {
-    const poolMat = new THREE.MeshStandardMaterial({ color: 0x4b93f5, roughness: 0.45 });
-    const waterMat = new THREE.MeshStandardMaterial({
-      color: 0x5eead4,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.25,
-      transparent: true,
-      opacity: 0.82,
-      roughness: 0.15,
-    });
-
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(3.45, 0.78, 2.25), poolMat);
-    wall.position.y = 0.39;
-    wall.castShadow = true;
-    this.bodyGroup.add(wall);
-
-    const water = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.14, 1.9), waterMat);
-    water.position.y = 0.75;
-    this.bodyGroup.add(water);
-
-    this.animatedParts.fishes = [];
-    for (let i = 0; i < 5; i++) {
-      const fish = new THREE.Mesh(
-        new THREE.SphereGeometry(0.16, 10, 8),
-        new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xf97316 : 0xef4444 })
-      );
-      fish.scale.set(1.5, 0.8, 0.7);
-      fish.position.set(0, 0.82, 0);
-      this.bodyGroup.add(fish);
-      this.animatedParts.fishes.push(fish);
-    }
-
-    const netGroup = new THREE.Group();
-    netGroup.position.set(0.6, 1.08, 0.2);
-    const hoop = new THREE.Mesh(
-      new THREE.TorusGeometry(0.28, 0.035, 8, 16),
-      new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
-    );
-    hoop.rotation.x = Math.PI / 2;
-    const handle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 0.65, 8),
-      new THREE.MeshStandardMaterial({ color: 0xef4444 })
-    );
-    handle.rotation.z = -0.9;
-    handle.position.set(0.4, 0.18, 0);
-    netGroup.add(hoop, handle);
-    this.bodyGroup.add(netGroup);
-    this.animatedParts.fishNet = netGroup;
-
-    const stoolMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
-    [-0.95, 0.95].forEach((sx) => {
-      const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.36, 12), stoolMat);
-      stool.position.set(sx, 0.18, 1.42);
-      this.bodyGroup.add(stool);
-    });
-
-    this._addLantern(-1.6, 2.35, 0.8);
-    this._addLantern(1.6, 2.35, 0.8);
-  }
-
-  _buildPinballArcade() {
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.45 });
-    const boardMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.55 });
-
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(2.85, 0.95, 1.85), bodyMat);
-    stand.position.y = 0.475;
-    stand.castShadow = true;
-    this.bodyGroup.add(stand);
-
-    const board = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.16, 1.6), boardMat);
-    board.position.set(0, 1.15, 0.1);
-    board.rotation.x = 0.32;
-    this.bodyGroup.add(board);
-
-    this.animatedParts.bulbs = [];
-    const bulbColors = [0xef4444, 0x3b82f6, 0x22c55e, 0xeab308];
-    for (let r = 0; r < 2; r++) {
-      for (let c = 0; c < 4; c++) {
-        const bMat = new THREE.MeshStandardMaterial({
-          color: bulbColors[(r + c) % 4],
-          emissive: bulbColors[(r + c) % 4],
-          emissiveIntensity: 0.55,
-        });
-        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), bMat);
-        bulb.position.set(-0.75 + c * 0.5, 1.28 - r * 0.14, -0.25 + r * 0.45);
-        this.bodyGroup.add(bulb);
-        this.animatedParts.bulbs.push({ mesh: bulb, mat: bMat });
-      }
-    }
-
-    const marble = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.75, roughness: 0.15 })
-    );
-    marble.position.set(0, 1.32, 0.15);
-    this.bodyGroup.add(marble);
-    this.animatedParts.marble = marble;
-  }
-
-  _buildGoldPanStation() {
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0xb06e3a, roughness: 0.75 });
-    const dock = new THREE.Mesh(new THREE.BoxGeometry(3.45, 0.45, 2.25), woodMat);
-    dock.position.y = 0.225;
-    dock.receiveShadow = true;
-    this.bodyGroup.add(dock);
-
-    const panGroup = new THREE.Group();
-    panGroup.position.set(0, 0.68, 0.22);
-    const bowl = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.9, 0.6, 0.36, 20),
-      new THREE.MeshStandardMaterial({ color: 0xc97b40 })
-    );
-    const water = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.78, 0.78, 0.06, 20),
-      new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 })
-    );
-    water.position.y = 0.15;
-    panGroup.add(bowl, water);
-
-    const goldMat = new THREE.MeshStandardMaterial({
-      color: 0xfde047,
-      emissive: 0xf59e0b,
-      emissiveIntensity: 0.85,
-      metalness: 0.45,
-      roughness: 0.2,
-    });
-    for (let i = 0; i < 5; i++) {
-      const nugget = new THREE.Mesh(new THREE.DodecahedronGeometry(0.13, 0), goldMat);
-      nugget.position.set(Math.cos(i * 1.2) * 0.36, 0.2, Math.sin(i * 1.2) * 0.36);
-      panGroup.add(nugget);
-    }
-
-    this.bodyGroup.add(panGroup);
-    this.animatedParts.goldPan = panGroup;
-    this._addLantern(-1.45, 2.25, 0.6);
-    this._addLantern(1.45, 2.25, 0.6);
-  }
-
-  _buildZhuyinBoardStation() {
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x9c5a2d, roughness: 0.75 });
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(3.55, 2.45, 0.28), frameMat);
-    stand.position.set(0, 1.38, -0.2);
-    stand.castShadow = true;
-    this.bodyGroup.add(stand);
-
-    const boardTex = createChalkboardTexture();
-    const board = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.2, 2.0),
-      new THREE.MeshStandardMaterial({
-        map: boardTex,
-        emissive: 0xffffff,
-        emissiveMap: boardTex,
-        emissiveIntensity: 0.25,
-        roughness: 0.6,
-      })
-    );
-    board.position.set(0, 1.42, -0.05);
-    this.bodyGroup.add(board);
-
-    this._addLantern(-1.6, 2.45, 0.2);
-    this._addLantern(1.6, 2.45, 0.2);
-  }
-
-  _buildComboLabStation() {
-    const deskMat = new THREE.MeshStandardMaterial({ color: 0xa46233, roughness: 0.75 });
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(3.15, 0.98, 1.7), deskMat);
-    desk.position.y = 0.49;
-    desk.castShadow = true;
-    this.bodyGroup.add(desk);
-
-    const blockA = new THREE.Mesh(
-      new THREE.BoxGeometry(0.7, 0.7, 0.7),
-      new THREE.MeshStandardMaterial({ color: 0xfb923c, emissive: 0xf97316, emissiveIntensity: 0.35 })
-    );
-    blockA.position.set(-0.58, 1.48, 0);
-    const blockB = new THREE.Mesh(
-      new THREE.BoxGeometry(0.7, 0.7, 0.7),
-      new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 0.35 })
-    );
-    blockB.position.set(0.58, 1.48, 0);
-
-    this.bodyGroup.add(blockA, blockB);
-    this.animatedParts.blockA = blockA;
-    this.animatedParts.blockB = blockB;
-    this._addLantern(-1.4, 2.25, 0.5);
-    this._addLantern(1.4, 2.25, 0.5);
+    this.lanterns.push({ pivot, halo });
   }
 
   _spawnParticles(count, isBurst = false) {
+    const tex = assetLoader.getSoftParticleTexture();
     for (let i = 0; i < count; i++) {
       let color = 0xfde047;
       let isSteam = false;
       if (this.animType === 'fish_scoop') color = 0x7dd3fc;
-      else if (this.animType === 'charcoal_grill') color = 0xff7b42;
-      else if (this.animType === 'claw_grab' || this.animType === 'glaze_sparkle') color = 0xff85b3;
+      else if (this.animType === 'charcoal_grill') color = 0xff8c42;
+      else if (this.animType === 'claw_grab' || this.animType === 'glaze_sparkle') color = 0xff9ec4;
       else if (this.animType === 'steam_ladle' && !isBurst) {
-        color = 0xfffaf0;
+        color = 0xfff8ef;
         isSteam = true;
       }
 
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(isSteam ? 0.14 : 0.09, 6, 6),
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: isSteam ? 0.45 : 0.95 })
+      const sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: tex,
+          color,
+          transparent: true,
+          opacity: isSteam ? 0.28 : 0.78,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
       );
-      mesh.position.set(
-        (Math.random() - 0.5) * 1.6,
-        1.3 + Math.random() * 0.4,
-        (Math.random() - 0.5) * 0.6 + 0.55
+      const size = isSteam ? 0.48 : 0.26;
+      sprite.scale.set(size, size, 1);
+      sprite.position.set(
+        (Math.random() - 0.5) * 1.3,
+        1.28 + Math.random() * 0.25,
+        0.55 + (Math.random() - 0.5) * 0.35
       );
-      this.particleGroup.add(mesh);
+      this.particleGroup.add(sprite);
 
       this.particles.push({
-        mesh,
-        vx: (Math.random() - 0.5) * (isBurst ? 2.8 : 0.4),
-        vy: (isBurst ? 2.5 : 1.0) + Math.random() * (isBurst ? 2.2 : 0.6),
-        vz: (Math.random() - 0.5) * (isBurst ? 2.2 : 0.4),
-        life: isBurst ? 0.9 + Math.random() * 0.4 : 1.0,
-        maxLife: 1.3,
+        sprite,
+        baseSize: size,
+        vx: (Math.random() - 0.5) * (isBurst ? 1.6 : 0.22),
+        vy: (isBurst ? 1.8 : 0.65) + Math.random() * (isBurst ? 1.2 : 0.4),
+        vz: (Math.random() - 0.5) * (isBurst ? 1.4 : 0.22),
+        life: isBurst ? 0.85 + Math.random() * 0.35 : 1.15,
+        maxLife: 1.2,
         isSteam,
       });
     }
@@ -881,24 +587,31 @@ export class Stall3D {
   update(dt, isNearest) {
     this.time += dt;
 
+    for (const m of this.mixers) {
+      m.update(dt);
+    }
+
     if (this.actionTimer > 0) {
       this.actionTimer -= dt;
-      if (Math.random() < 0.35) this._spawnParticles(1, true);
+      if (Math.random() < 0.22) this._spawnParticles(1, true);
       if (this.actionTimer <= 0) {
         this.state = isNearest ? 'proximity' : 'idle';
         this.bubbleSprite.visible = false;
+        this._playVendorAction('idle');
       }
     } else {
       this.state = isNearest ? 'proximity' : 'idle';
     }
 
     const isAction = this.state === 'action' || this.state === 'celebrate';
-    const actionRatio = isAction ? Math.max(0, this.actionTimer / this.actionDuration) : 0;
+    const progress = isAction ? 1 - Math.max(0, this.actionTimer / this.actionDuration) : 0;
 
+    // 1. 地面光環
     if (this.proximityRing) {
-      const targetOpacity = isAction ? 0.9 : isNearest || this.isHovered ? 0.68 : 0;
-      this.proximityRing.material.opacity += (targetOpacity - this.proximityRing.material.opacity) * Math.min(1, dt * 10);
-      const pulse = 1 + Math.sin(this.time * 5) * 0.04;
+      const targetOpacity = isAction ? 0.85 : isNearest || this.isHovered ? 0.62 : 0;
+      this.proximityRing.material.opacity +=
+        (targetOpacity - this.proximityRing.material.opacity) * Math.min(1, dt * 10);
+      const pulse = 1 + Math.sin(this.time * 4.5) * 0.035;
       this.proximityRing.scale.set(pulse, pulse, 1);
     }
 
@@ -910,147 +623,75 @@ export class Stall3D {
       }
     }
 
+    // 2. 星徽旋轉
     if (this.starBadge && this.starBadge.visible) {
-      this.starBadge.rotation.y = this.time * 2.4;
-      this.starBadge.position.y = 3.65 + Math.sin(this.time * 3.5) * 0.1;
+      this.starBadge.rotation.y = this.time * 2.0;
+      this.starBadge.position.y = 4.1 + Math.sin(this.time * 3.0) * 0.08;
     }
 
+    // 3. 燈籠柔順擺動
     this.lanterns.forEach((l, idx) => {
-      const speed = isAction ? 9 : 2.2;
-      const amp = isAction ? 0.25 : 0.08;
+      const speed = isAction ? 5.5 : 1.8;
+      const amp = isAction ? 0.14 : 0.05;
       l.pivot.rotation.z = Math.sin(this.time * speed + idx) * amp;
-      l.bulb.material.emissiveIntensity = isAction ? 1.6 : 1.0 + Math.sin(this.time * 3 + idx) * 0.2;
       if (l.halo) {
-        l.halo.material.opacity = isAction ? 0.9 : 0.58 + Math.sin(this.time * 3 + idx) * 0.12;
+        l.halo.material.opacity = isAction ? 0.72 : 0.42 + Math.sin(this.time * 2.4 + idx) * 0.08;
       }
     });
 
-    this.bodyGroup.position.y = isAction ? Math.abs(Math.sin(this.time * 16)) * 0.14 * actionRatio : 0;
-
-    if (this.animatedParts.vendor) {
-      this.animatedParts.vendor.position.y =
-        1.08 + (isAction ? Math.abs(Math.sin(this.time * 18)) * 0.16 : Math.sin(this.time * 2.8) * 0.03);
-      if (this.animatedParts.vendorArm) {
-        this.animatedParts.vendorArm.rotation.z = isAction
-          ? -0.4 + Math.sin(this.time * 24) * 0.9
-          : -0.4 + Math.sin(this.time * 3) * 0.12;
-      }
-    }
-
-    if (this.animatedParts.props) {
-      this.animatedParts.props.forEach((prop, idx) => {
-        if (this.animType === 'shake_drink') {
-          prop.position.y = isAction ? Math.abs(Math.sin(this.time * 18 + idx)) * 0.28 : Math.sin(this.time * 3 + idx) * 0.02;
-          prop.rotation.z = isAction ? Math.sin(this.time * 22 + idx) * 0.25 : 0;
-        } else if (this.animType === 'charcoal_grill') {
-          prop.rotation.y = isAction ? this.time * 8 + idx : Math.sin(this.time * 2 + idx) * 0.15;
-          prop.position.y = 0.3 + (isAction ? Math.abs(Math.sin(this.time * 15 + idx)) * 0.14 : 0);
-        } else if (this.animType === 'glaze_sparkle') {
-          prop.rotation.y = this.time * (isAction ? 7 : 1.1) + idx;
-        } else {
-          prop.position.y = 0.27 + (isAction ? Math.abs(Math.sin(this.time * 16 + idx)) * 0.18 : 0);
-        }
+    // 4. 展示食物優雅抬升旋轉（取代原本整棟攤位抖動）
+    if (this.showcaseProps.length > 0) {
+      // 平滑拱形曲線 sin(pi * progress)
+      const lift = isAction ? Math.sin(progress * Math.PI) * 0.55 : 0;
+      const spin = isAction ? progress * Math.PI * 2 : 0;
+      this.showcaseProps.forEach((prop, idx) => {
+        const baseY = prop.userData.baseY ?? 1.16;
+        prop.position.y = baseY + lift + (isAction ? Math.sin(this.time * 8 + idx) * 0.04 : 0);
+        prop.rotation.y = spin;
       });
     }
 
-    if (this.animatedParts.emberMat) {
-      this.animatedParts.emberMat.emissiveIntensity = isAction
-        ? 1.7 + Math.sin(this.time * 20) * 0.5
-        : 0.95 + Math.sin(this.time * 4) * 0.25;
+    // 5. 娃娃機速度切換
+    if (this.clawAction) {
+      this.clawAction.setEffectiveTimeScale(isAction ? 2.4 : 0.65);
     }
 
-    if (this.animatedParts.crane) {
-      if (isAction) {
-        this.animatedParts.crane.position.x = 0;
-        const drop = Math.sin((1 - actionRatio) * Math.PI);
-        this.animatedParts.crane.position.y = 2.45 - drop * 0.72;
-        if (this.animatedParts.targetBear) {
-          this.animatedParts.targetBear.position.y = 1.35 + Math.max(0, drop - 0.35) * 0.85;
-        }
-      } else {
-        this.animatedParts.crane.position.x = Math.sin(this.time * 1.6) * 0.62;
-        this.animatedParts.crane.position.y = 2.45;
-        if (this.animatedParts.targetBear) {
-          this.animatedParts.targetBear.position.y = 1.35 + Math.sin(this.time * 2.5) * 0.02;
-        }
-      }
-    }
-
-    if (this.animatedParts.fishes) {
-      this.animatedParts.fishes.forEach((f, idx) => {
-        const spd = isAction ? 3.2 : 1.2;
-        const t = this.time * spd + idx * 1.4;
-        const nx = Math.sin(t) * 1.05;
-        const nz = Math.cos(t * 0.85) * 0.55;
-        f.rotation.y = Math.atan2(Math.cos(t) * 1.05, -Math.sin(t * 0.85) * 0.55);
-        f.position.set(nx, 0.82, nz);
+    // 6. 撈魚池 3D 魚群流暢路徑游動
+    if (this.fishes.length > 0) {
+      this.fishes.forEach((f, idx) => {
+        const spd = isAction ? 2.6 : 1.05;
+        const t = this.time * spd + idx * 1.65;
+        const nx = Math.sin(t) * 0.85;
+        const nz = 0.05 + Math.cos(t * 0.82) * 0.52;
+        const dx = Math.cos(t) * 0.85;
+        const dz = -Math.sin(t * 0.82) * 0.52 * 0.82;
+        f.rotation.y = Math.atan2(dx, dz);
+        f.position.set(nx, 0.94 + Math.sin(t * 2) * 0.02, nz);
       });
-      if (this.animatedParts.fishNet) {
-        this.animatedParts.fishNet.position.y = isAction
-          ? 0.92 + Math.sin(this.time * 14) * 0.24
-          : 1.08 + Math.sin(this.time * 2.4) * 0.04;
-      }
     }
 
-    if (this.animatedParts.bulbs) {
-      this.animatedParts.bulbs.forEach((b, idx) => {
-        const speed = isAction ? 16 : 3;
-        const on = Math.sin(this.time * speed + idx * 1.3) > 0;
-        b.mat.emissiveIntensity = on ? (isAction ? 1.9 : 1.0) : 0.25;
-      });
-      if (this.animatedParts.marble) {
-        const mSpd = isAction ? 14 : 2.5;
-        this.animatedParts.marble.position.x = Math.sin(this.time * mSpd) * 0.85;
-        this.animatedParts.marble.position.z = Math.cos(this.time * mSpd * 1.3) * 0.45;
-      }
-    }
-
-    if (this.animatedParts.goldPan) {
-      if (isAction) {
-        this.animatedParts.goldPan.position.x = Math.sin(this.time * 24) * 0.18;
-        this.animatedParts.goldPan.rotation.z = Math.sin(this.time * 24) * 0.16;
-      } else {
-        this.animatedParts.goldPan.position.x = 0;
-        this.animatedParts.goldPan.rotation.z = Math.sin(this.time * 2) * 0.03;
-      }
-    }
-
-    if (this.animatedParts.blockA && this.animatedParts.blockB) {
-      if (isAction) {
-        const merge = Math.sin((1 - actionRatio) * Math.PI) * 0.26;
-        this.animatedParts.blockA.position.x = -0.58 + merge;
-        this.animatedParts.blockB.position.x = 0.58 - merge;
-        this.animatedParts.blockA.rotation.y = this.time * 6;
-        this.animatedParts.blockB.rotation.y = -this.time * 6;
-      } else {
-        this.animatedParts.blockA.position.x = -0.58;
-        this.animatedParts.blockB.position.x = 0.58;
-        this.animatedParts.blockA.position.y = 1.48 + Math.sin(this.time * 2.5) * 0.08;
-        this.animatedParts.blockB.position.y = 1.48 + Math.cos(this.time * 2.5) * 0.08;
-        this.animatedParts.blockA.rotation.y = this.time * 0.7;
-        this.animatedParts.blockB.rotation.y = -this.time * 0.7;
-      }
-    }
-
+    // 7. 柔和環境蒸氣精靈
     if (
       (this.animType === 'steam_ladle' || this.animType === 'sizzle_fry' || this.animType === 'charcoal_grill') &&
-      Math.random() < dt * 2.5
+      Math.random() < dt * 2.0
     ) {
       this._spawnParticles(1, false);
     }
 
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
-      p.mesh.position.x += p.vx * dt;
-      p.mesh.position.y += p.vy * dt;
-      p.mesh.position.z += p.vz * dt;
-      if (!p.isSteam) p.vy -= 5.2 * dt;
+      p.sprite.position.x += p.vx * dt;
+      p.sprite.position.y += p.vy * dt;
+      p.sprite.position.z += p.vz * dt;
+      if (!p.isSteam) p.vy -= 2.8 * dt;
       p.life -= dt;
-      p.mesh.material.opacity = Math.max(0, (p.life / p.maxLife) * (p.isSteam ? 0.45 : 0.95));
+      const ratio = Math.max(0, p.life / p.maxLife);
+      const scale = p.baseSize * (p.isSteam ? 1 + (1 - ratio) * 0.8 : ratio);
+      p.sprite.scale.set(scale, scale, 1);
+      p.sprite.material.opacity = ratio * (p.isSteam ? 0.28 : 0.78);
       if (p.life <= 0) {
-        this.particleGroup.remove(p.mesh);
-        p.mesh.geometry.dispose();
-        p.mesh.material.dispose();
+        this.particleGroup.remove(p.sprite);
+        p.sprite.material.dispose();
         this.particles.splice(i, 1);
       }
     }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { NIGHT_MARKET_STALLS, LEARNING_STATIONS } from '../data/stallsData.js';
 import { Stall3D } from './Stall3D.js';
+import { assetLoader } from './AssetLoader3D.js';
 import {
   createCobblestoneTexture,
   createJiufenGroundTexture,
@@ -10,8 +11,7 @@ import {
 } from './textureUtils.js';
 
 /**
- * 雙區域 3D Q版地圖場景管理器
- * 區分：
+ * 雙區域 3D 地圖場景管理器（全面採用 Kenney CC0 精緻 3D 場景物件）
  * 1. learning（學習區：九份淘金與注音學堂）
  * 2. nightmarket（練習區：台灣夜市 17 攤雙拼挑戰）
  */
@@ -90,36 +90,31 @@ export class World3D {
         map: plaqueTex,
         emissive: 0xffe4a0,
         emissiveMap: plaqueTex,
-        emissiveIntensity: 0.3,
+        emissiveIntensity: 0.18,
       })
     );
     plaque.position.set(0, 3.35, 0.3);
     arch.add(plaque);
 
-    [-1.8, 1.8].forEach((lx) => {
-      const bulb = new THREE.Mesh(
-        new THREE.SphereGeometry(0.34, 12, 10),
-        new THREE.MeshStandardMaterial({
-          color: 0xff5a36,
-          emissive: 0xff6b2b,
-          emissiveIntensity: 1.25,
-        })
-      );
-      bulb.scale.set(1, 1.18, 1);
-      bulb.position.set(lx, 2.75, 0.38);
-      arch.add(bulb);
+    [-1.8, 1.8].forEach(async (lx) => {
+      const { object: lObj } = await assetLoader.createInstance('/assets3d/holiday/lantern-hanging.glb', {
+        targetHeight: 0.9,
+        alignBottom: false,
+      });
+      lObj.position.set(lx, 2.85, 0.38);
+      arch.add(lObj);
 
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: this.glowTex,
           color: 0xffb347,
           transparent: true,
-          opacity: 0.75,
+          opacity: 0.55,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         })
       );
-      halo.scale.set(2.1, 2.1, 1);
+      halo.scale.set(2.0, 2.0, 1);
       halo.position.set(lx, 2.75, 0.38);
       arch.add(halo);
     });
@@ -184,38 +179,29 @@ export class World3D {
       const pivot = new THREE.Group();
       pivot.position.set(lx, y - sag, z);
 
-      const lantern = new THREE.Mesh(
-        new THREE.SphereGeometry(0.27, 12, 10),
-        new THREE.MeshStandardMaterial({
-          color: 0xff5a36,
-          emissive: 0xff6b2b,
-          emissiveIntensity: 1.2,
+      assetLoader
+        .createInstance('/assets3d/holiday/lantern-hanging.glb', {
+          targetHeight: 0.65,
+          alignBottom: false,
         })
-      );
-      lantern.scale.set(1, 1.18, 1);
-      lantern.position.y = -0.32;
-      pivot.add(lantern);
+        .then(({ object: lObj }) => {
+          lObj.position.y = -0.32;
+          pivot.add(lObj);
+        });
 
       const halo = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: this.glowTex,
           color: 0xffb347,
           transparent: true,
-          opacity: 0.65,
+          opacity: 0.42,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         })
       );
-      halo.scale.set(1.65, 1.65, 1);
+      halo.scale.set(1.5, 1.5, 1);
       halo.position.y = -0.32;
       pivot.add(halo);
-
-      const cap = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 0.06, 8),
-        new THREE.MeshStandardMaterial({ color: 0xfde047 })
-      );
-      cap.position.y = -0.06;
-      pivot.add(cap);
 
       group.add(pivot);
       this.lanternStrings.push({ pivot, phase: i * 0.7 });
@@ -224,34 +210,23 @@ export class World3D {
     parentGroup.add(group);
   }
 
-  _buildChibiTree(parentGroup, x, z, scale = 1) {
-    const tree = new THREE.Group();
-    tree.position.set(x, 0, z);
-    tree.scale.setScalar(scale);
-
-    const trunk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.24, 0.34, 1.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0x8c552c, roughness: 0.85 })
-    );
-    trunk.position.y = 0.7;
-    trunk.castShadow = true;
-
-    const leafMat1 = new THREE.MeshStandardMaterial({ color: 0x4d9938, roughness: 0.75 });
-    const leafMat2 = new THREE.MeshStandardMaterial({ color: 0x65b844, roughness: 0.75 });
-    const c1 = new THREE.Mesh(new THREE.SphereGeometry(1.15, 14, 12), leafMat1);
-    c1.position.set(0, 2.05, 0);
-    c1.castShadow = true;
-    const c2 = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 10), leafMat2);
-    c2.position.set(0.45, 2.45, 0.25);
-    const c3 = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 10), leafMat2);
-    c3.position.set(-0.5, 2.3, -0.15);
-
-    tree.add(trunk, c1, c2, c3);
-    parentGroup.add(tree);
+  _placeProp(parentGroup, url, x, z, targetHeight, rotY = 0, colliders = null, colRadius = 0) {
+    assetLoader.createInstance(url, { targetHeight }).then(({ object }) => {
+      object.position.set(x, 0, z);
+      object.rotation.y = rotY;
+      parentGroup.add(object);
+    });
+    if (colliders && colRadius > 0) {
+      colliders.push({
+        minX: x - colRadius,
+        maxX: x + colRadius,
+        minZ: z - colRadius,
+        maxZ: z + colRadius,
+      });
+    }
   }
 
   _buildBackgroundTown(parentGroup) {
-    // 遠景溫馨夜色小鎮屋舍剪影與發亮暖黃窗戶（對應參考圖背景）
     const houseMat = new THREE.MeshStandardMaterial({ color: 0x463d6e, roughness: 0.9 });
     const roofMat = new THREE.MeshStandardMaterial({ color: 0x322b54, roughness: 0.85 });
     const winMat = new THREE.MeshBasicMaterial({ color: 0xfde68a });
@@ -272,7 +247,6 @@ export class World3D {
       roof.position.y = b.h + 0.25;
       g.add(body, roof);
 
-      // 發亮小窗戶
       for (let r = 0; r < 2; r++) {
         for (let c = -1; c <= 1; c += 2) {
           const win = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.95), winMat);
@@ -284,47 +258,9 @@ export class World3D {
     });
   }
 
-  _buildPlanter(parentGroup, colliders, x, z) {
-    const g = new THREE.Group();
-    g.position.set(x, 0, z);
-
-    const box = new THREE.Mesh(
-      new THREE.BoxGeometry(1.75, 0.55, 1.35),
-      new THREE.MeshStandardMaterial({ color: 0xa69386, roughness: 0.85 })
-    );
-    box.position.y = 0.275;
-    box.castShadow = true;
-    g.add(box);
-
-    const bushMat = new THREE.MeshStandardMaterial({ color: 0x5ca832, roughness: 0.75 });
-    [
-      [-0.35, 0.72, 0],
-      [0.35, 0.7, 0.1],
-      [0, 0.88, -0.1],
-    ].forEach(([bx, by, bz]) => {
-      const bush = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 10), bushMat);
-      bush.position.set(bx, by, bz);
-      bush.castShadow = true;
-      g.add(bush);
-    });
-
-    const flowerMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb });
-    [
-      [-0.35, 1.08, 0.2],
-      [0.25, 1.05, 0.22],
-      [0, 1.22, 0.05],
-    ].forEach(([fx, fy, fz]) => {
-      const fl = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), flowerMat);
-      fl.position.set(fx, fy, fz);
-      g.add(fl);
-    });
-
-    parentGroup.add(g);
-    colliders.push({ minX: x - 0.9, maxX: x + 0.9, minZ: z - 0.7, maxZ: z + 0.7 });
-  }
-
   _buildFireflies(parentGroup, spreadX, spreadZ) {
-    const count = 48;
+    const tex = assetLoader.getSoftParticleTexture();
+    const count = 42;
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * spreadX;
@@ -334,10 +270,13 @@ export class World3D {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const mat = new THREE.PointsMaterial({
+      map: tex,
       color: 0xfef08a,
-      size: 0.18,
+      size: 0.26,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.72,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
     });
     const pts = new THREE.Points(geo, mat);
     parentGroup.add(pts);
@@ -372,33 +311,34 @@ export class World3D {
     stream.position.set(0, 0.02, 2.4);
     g.add(stream);
 
+    // 使用 Kenney 精緻木橋模型跨越溪流
     [-5.8, 5.8].forEach((bx) => {
-      const bridge = new THREE.Mesh(
-        new THREE.BoxGeometry(2.6, 0.18, 3.0),
-        new THREE.MeshStandardMaterial({ color: 0xb8703b, roughness: 0.8 })
-      );
-      bridge.position.set(bx, 0.08, 2.4);
-      bridge.receiveShadow = true;
-      g.add(bridge);
+      this._placeProp(g, '/assets3d/forest/bridge.glb', bx, 2.4, 1.35, Math.PI / 2);
     });
 
+    // 溪邊岩石、花草、燈籠與大樹
+    this._placeProp(g, '/assets3d/forest/rocks-high.glb', -9.5, 2.5, 1.4, 0.4, colliders, 0.8);
+    this._placeProp(g, '/assets3d/forest/rocks-high.glb', 9.5, 2.5, 1.4, -0.5, colliders, 0.8);
+    this._placeProp(g, '/assets3d/town/tree-high-round.glb', -11.2, -9.2, 4.6, 0.2);
+    this._placeProp(g, '/assets3d/town/tree-high-round.glb', 11.2, -9.2, 4.6, -0.3);
+    this._placeProp(g, '/assets3d/town/lantern.glb', -9.2, 6.2, 2.1, 0, colliders, 0.45);
+    this._placeProp(g, '/assets3d/town/lantern.glb', 9.2, 6.2, 2.1, 0, colliders, 0.45);
+    this._placeProp(g, '/assets3d/holiday/bench.glb', -6.8, 6.4, 0.95, 0, colliders, 0.7);
+    this._placeProp(g, '/assets3d/holiday/bench.glb', 6.8, 6.4, 0.95, 0, colliders, 0.7);
+
     this._buildLanternString(g, 3.8, -7.2, -10.5, 10.5, 9);
-    this._buildChibiTree(g, -11.5, -9.5, 1.1);
-    this._buildChibiTree(g, 11.5, -9.5, 1.1);
 
     const portal = this._buildArchwayPortal(g, '前往夜市 ➔', '#1e3a8a', 0, -9.2, 'nightmarket');
     this.portals.learning = portal;
     colliders.push(...portal.colliders);
 
-    LEARNING_STATIONS.forEach((cfg) => {
-      const stall = new Stall3D(cfg);
+    LEARNING_STATIONS.forEach((cfg, idx) => {
+      const stall = new Stall3D(cfg, idx);
       g.add(stall.group);
       this.stallsByZone.learning.push(stall);
       colliders.push(stall.getCollider());
     });
 
-    this._buildPlanter(g, colliders, -9.5, 6.2);
-    this._buildPlanter(g, colliders, 9.5, 6.2);
     this._buildFireflies(g, 24, 18);
   }
 
@@ -415,11 +355,20 @@ export class World3D {
     g.add(floor);
 
     this._buildBackgroundTown(g);
-    this._buildChibiTree(g, -18.5, -13.5, 1.35);
-    this._buildChibiTree(g, -13.0, -14.2, 1.15);
-    this._buildChibiTree(g, 13.0, -14.2, 1.15);
-    this._buildChibiTree(g, 18.5, -13.5, 1.35);
 
+    // 精緻 3D 圓樹與樹籬
+    this._placeProp(g, '/assets3d/town/tree-high-round.glb', -18.5, -13.5, 5.2, 0.3);
+    this._placeProp(g, '/assets3d/town/tree-high-round.glb', -13.0, -14.2, 4.4, -0.4);
+    this._placeProp(g, '/assets3d/town/tree-high-round.glb', 13.0, -14.2, 4.4, 0.5);
+    this._placeProp(g, '/assets3d/town/tree-high-round.glb', 18.5, -13.5, 5.2, -0.2);
+
+    // 廣場樹籬花台與燈柱
+    this._placeProp(g, '/assets3d/town/hedge.glb', -3.2, -5.2, 1.35, 0, colliders, 0.85);
+    this._placeProp(g, '/assets3d/town/hedge.glb', -3.2, 2.2, 1.35, 0, colliders, 0.85);
+    this._placeProp(g, '/assets3d/town/lantern.glb', -4.2, -9.8, 2.4, 0, colliders, 0.45);
+    this._placeProp(g, '/assets3d/town/lantern.glb', 4.2, -9.8, 2.4, 0, colliders, 0.45);
+
+    // 廣場水溝蓋
     const manhole = new THREE.Mesh(
       new THREE.CylinderGeometry(0.72, 0.72, 0.03, 20),
       new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.55, metalness: 0.25 })
@@ -427,17 +376,9 @@ export class World3D {
     manhole.position.set(-3.8, 0.015, -1.6);
     g.add(manhole);
 
-    this._buildPlanter(g, colliders, -3.2, -5.2);
-    this._buildPlanter(g, colliders, -3.2, 2.2);
-
-    const bench = new THREE.Mesh(
-      new THREE.BoxGeometry(2.1, 0.45, 0.65),
-      new THREE.MeshStandardMaterial({ color: 0xb8703b })
-    );
-    bench.position.set(-11.4, 0.225, -10.8);
-    bench.castShadow = true;
-    g.add(bench);
-    colliders.push({ minX: -12.5, maxX: -10.3, minZ: -11.2, maxZ: -10.4 });
+    // 精緻木椅與木推車
+    this._placeProp(g, '/assets3d/holiday/bench.glb', -11.4, -10.8, 0.95, 0, colliders, 0.8);
+    this._placeProp(g, '/assets3d/town/cart.glb', 11.4, -10.6, 1.65, -0.4, colliders, 0.95);
 
     this._buildLanternString(g, 4.1, -11.4, -17, -3.2, 6);
     this._buildLanternString(g, 4.1, -11.4, 3.2, 17, 6);
@@ -447,8 +388,8 @@ export class World3D {
     this.portals.nightmarket = portal;
     colliders.push(...portal.colliders);
 
-    NIGHT_MARKET_STALLS.forEach((cfg) => {
-      const stall = new Stall3D(cfg);
+    NIGHT_MARKET_STALLS.forEach((cfg, idx) => {
+      const stall = new Stall3D(cfg, idx);
       g.add(stall.group);
       this.stallsByZone.nightmarket.push(stall);
       colliders.push(stall.getCollider());
@@ -486,11 +427,11 @@ export class World3D {
     this.time += dt;
 
     this.lanternStrings.forEach((l) => {
-      l.pivot.rotation.z = Math.sin(this.time * 2.1 + l.phase) * 0.08;
+      l.pivot.rotation.z = Math.sin(this.time * 2.0 + l.phase) * 0.06;
     });
 
     this.fireflies.forEach((pts) => {
-      pts.position.y = Math.sin(this.time * 1.1) * 0.18;
+      pts.position.y = Math.sin(this.time * 1.1) * 0.16;
     });
 
     const portal = this.portals[activeZone];
