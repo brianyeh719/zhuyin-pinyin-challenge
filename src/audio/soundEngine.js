@@ -8,6 +8,7 @@ class SoundEngine {
     this.ctx = null;
     this.muted = false;
     this.zhVoice = null;
+    this._audio = null;
     this._initVoice();
   }
 
@@ -26,11 +27,19 @@ class SoundEngine {
 
   _initVoice() {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    const norm = (v) => (v.lang || '').replace('_', '-').toLowerCase();
+    // 粵語（zh-HK / yue）與國語發音完全不同，一律排除
+    const isCantonese = (v) => /^zh-hk|^yue/.test(norm(v)) || /粵|廣東|cantonese|hong kong/i.test(v.name);
     const pickVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
+      const voices = window.speechSynthesis.getVoices().filter((v) => !isCantonese(v));
+      const tw = voices.filter((v) => norm(v) === 'zh-tw');
+      // 同為 zh-TW 時優先挑神經網路／雲端語音（Natural、Online、Google），品質遠高於舊式離線語音
+      const best = (list) =>
+        list.find((v) => /natural|neural|online|google/i.test(v.name)) || list[0] || null;
       this.zhVoice =
-        voices.find((v) => v.lang === 'zh-TW') ||
-        voices.find((v) => v.lang.startsWith('zh')) ||
+        best(tw) ||
+        best(voices.filter((v) => /^zh-cn|^cmn/.test(norm(v)))) ||
+        best(voices.filter((v) => norm(v).startsWith('zh'))) ||
         null;
     };
     pickVoice();
@@ -39,8 +48,45 @@ class SoundEngine {
 
   setMuted(muted) {
     this.muted = muted;
+    if (muted) this._stopAudio();
     if (muted && typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+    }
+  }
+
+  _stopAudio() {
+    if (this._audio) {
+      this._audio.pause();
+      this._audio = null;
+    }
+  }
+
+  /**
+   * 播放「單一注音符號」的標準發音。
+   * 優先播放預錄／預先合成的音檔（public/audio/zhuyin/<id>.mp3，所有裝置發音一致），
+   * 檔案不存在或播放失敗時，才退回瀏覽器語音合成。
+   */
+  speakSymbol(item, fallbackText) {
+    if (this.muted || !item) return;
+    const text = fallbackText || item.audioText || item.zhuyin;
+    if (typeof Audio === 'undefined' || !item.id) {
+      this.speak(text);
+      return;
+    }
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      this._stopAudio();
+      const base = (import.meta.env && import.meta.env.BASE_URL) || '/';
+      const audio = new Audio(`${base}audio/zhuyin/${item.id}.mp3`);
+      this._audio = audio;
+      audio.onerror = () => {
+        if (this._audio === audio) this.speak(text);
+      };
+      audio.play().catch(() => {
+        if (this._audio === audio) this.speak(text);
+      });
+    } catch {
+      this.speak(text);
     }
   }
 

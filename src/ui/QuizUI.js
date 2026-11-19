@@ -8,6 +8,8 @@ import { NIGHT_MARKET_STALLS } from '../data/stallsData.js';
 import { soundEngine } from '../audio/soundEngine.js';
 import { icon } from './icons.js';
 
+const findSymbolById = (id) => ALL_ZHUYIN_SYMBOLS.find((s) => s.id === id) || null;
+
 /**
  * 遊戲式互動答題與學習系統 UI 控制器
  * 遵循設計工程規範：克制色階、同心圓角、統一 SVG 圖示、零閃爍局部更新
@@ -557,14 +559,14 @@ export class QuizUI {
     `;
 
     this._openModalHtml(html);
-    soundEngine.speak(target.audioText);
+    soundEngine.speakSymbol(target);
 
     document.getElementById('btn-close-modal').onclick = () => this.closeModal();
     document.getElementById('btn-open-compendium').onclick = () => {
       soundEngine.playClick();
       this.openCompendium();
     };
-    document.getElementById('btn-speak-gold').onclick = () => soundEngine.speak(target.audioText);
+    document.getElementById('btn-speak-gold').onclick = () => soundEngine.speakSymbol(target);
     document.getElementById('mode-zh-py').onclick = () => {
       soundEngine.playClick();
       this.goldMode = 'zhuyin_to_pinyin';
@@ -701,7 +703,7 @@ export class QuizUI {
 
     document.querySelectorAll('.symbol-book-card').forEach((card) => {
       card.onclick = () => {
-        soundEngine.speak(card.dataset.speak);
+        soundEngine.speakSymbol(findSymbolById(card.dataset.id), card.dataset.speak);
       };
     });
   }
@@ -796,7 +798,9 @@ export class QuizUI {
         if (matchedStalls.length > 0) {
           soundEngine.speak(matchedStalls[0].targetChar);
         } else {
-          soundEngine.speak(`${initObj?.audioText || ''} ${finObj?.audioText || ''}`);
+          // 聲母＋韻母無對應整音節檔時，依序播放兩個符號的標準音檔
+          soundEngine.speakSymbol(initObj || finObj);
+          if (initObj && finObj) setTimeout(() => soundEngine.speakSymbol(finObj), 900);
         }
       };
     };
