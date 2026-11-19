@@ -254,7 +254,7 @@ export class QuizUI {
     `;
 
     this._openModalHtml(html);
-    soundEngine.speak(stallConfig.name);
+    soundEngine.speak(stallConfig.audioText || stallConfig.name);
     this._bindStallModalEvents(stallConfig);
   }
 
@@ -294,7 +294,7 @@ export class QuizUI {
     };
 
     document.getElementById('btn-speak-word').onclick = () => {
-      soundEngine.speak(stall.name);
+      soundEngine.speak(stall.audioText || stall.name);
     };
 
     const fullCardBtn = document.getElementById('btn-speak-full-card');
@@ -426,7 +426,7 @@ export class QuizUI {
 
     if (initOk && finOk) {
       soundEngine.playCorrect();
-      soundEngine.speak(stall.name);
+      soundEngine.speak(stall.audioText || stall.name);
       const firstClear = !this.state.clearedStalls.has(stall.id);
       this.state.clearedStalls.add(stall.id);
       this.state.streak += 1;
@@ -853,7 +853,7 @@ export class QuizUI {
                 <div class="pi-pinyin">${s.pinyin}</div>
                 <div class="pi-focus">${s.focusPoint}</div>
                 <div class="pi-actions">
-                  <button class="secondary-pill mini-pill" data-speak="${s.name}">${icon('volumeOn')}<span>讀音</span></button>
+                  <button class="secondary-pill mini-pill" data-speak="${s.audioText || s.name}">${icon('volumeOn')}<span>讀音</span></button>
                   <button class="primary-pill mini-pill" data-goto="${s.id}"><span>前往攤位</span>${icon('arrowRight')}</button>
                 </div>
               </div>

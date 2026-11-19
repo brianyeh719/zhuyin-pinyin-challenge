@@ -189,6 +189,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'pinball',
     name: '打彈珠',
+    audioText: '打蛋珠',
     pinyin: 'dǎ dàn zhū',
     zhuyin: 'ㄉㄚˇ ㄉㄢˋ ㄓㄨ',
     focusPoint: 'zh + u（翹舌音＋合口呼）',
