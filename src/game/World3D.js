@@ -52,7 +52,7 @@ export class World3D {
     this.scene.add(this.zoneGroups.nightmarket);
   }
 
-  _buildArchwayPortal(parentGroup, title, plaqueBg, x, z, targetZone) {
+  _buildArchwayPortal(parentGroup, title, plaqueBg, x, z, targetZone, titleEn = '') {
     const arch = new THREE.Group();
     arch.position.set(x, 0, z);
 
@@ -83,7 +83,7 @@ export class World3D {
     ridge.position.set(0, 4.74, 0);
     arch.add(beam, roof1, roof2, ridge);
 
-    const plaqueTex = createArchPlaqueTexture(title, plaqueBg, '#fef08a');
+    const plaqueTex = createArchPlaqueTexture(title, plaqueBg, '#fef08a', titleEn);
     const plaque = new THREE.Mesh(
       new THREE.BoxGeometry(2.85, 1.0, 0.26),
       new THREE.MeshStandardMaterial({
@@ -328,7 +328,7 @@ export class World3D {
 
     this._buildLanternString(g, 3.8, -7.2, -10.5, 10.5, 9);
 
-    const portal = this._buildArchwayPortal(g, '前往夜市 ➔', '#1e3a8a', 0, -9.2, 'nightmarket');
+    const portal = this._buildArchwayPortal(g, '前往夜市 ➔', '#1e3a8a', 0, -9.2, 'nightmarket', 'To the Night Market');
     this.portals.learning = portal;
     colliders.push(...portal.colliders);
 
@@ -384,7 +384,7 @@ export class World3D {
     this._buildLanternString(g, 4.1, -11.4, 3.2, 17, 6);
     this._buildLanternString(g, 4.1, 8.2, -16, 16, 12);
 
-    const portal = this._buildArchwayPortal(g, '夜市（回學堂）', '#a8241d', 0, -12.4, 'learning');
+    const portal = this._buildArchwayPortal(g, '夜市（回學堂）', '#a8241d', 0, -12.4, 'learning', 'Back to Jiufen');
     this.portals.nightmarket = portal;
     colliders.push(...portal.colliders);
 

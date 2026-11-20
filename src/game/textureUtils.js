@@ -3,7 +3,7 @@ import * as THREE from 'three';
 /**
  * 繪製攤位或設施的 Q 版圓潤雙色招牌貼圖
  */
-export function createSignTexture(emoji, title, bgColor = '#fff7e6', borderColor = '#d97706') {
+export function createSignTexture(emoji, title, bgColor = '#fff7e6', borderColor = '#d97706', subtitle = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 176;
@@ -46,11 +46,21 @@ export function createSignTexture(emoji, title, bgColor = '#fff7e6', borderColor
 
   // 攤位名稱文字
   ctx.fillStyle = '#3b1d0c';
-  ctx.font = 'bold 58px "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const textX = emoji ? 302 : 256;
-  ctx.fillText(title, textX, 90, 310);
+  const maxW = emoji ? 310 : 400;
+  if (subtitle) {
+    // 雙語：中文在上、英文在下
+    ctx.font = 'bold 50px "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif';
+    ctx.fillText(title, textX, 70, maxW);
+    ctx.fillStyle = '#7c3a12';
+    ctx.font = 'bold 28px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(subtitle, textX, 118, maxW);
+  } else {
+    ctx.font = 'bold 58px "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif';
+    ctx.fillText(title, textX, 90, maxW);
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -188,7 +198,7 @@ export function createJiufenGroundTexture() {
 /**
  * 繪製牌樓匾額貼圖
  */
-export function createArchPlaqueTexture(title, bg = '#a8241d', fg = '#fef08a') {
+export function createArchPlaqueTexture(title, bg = '#a8241d', fg = '#fef08a', subtitle = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 192;
@@ -209,10 +219,17 @@ export function createArchPlaqueTexture(title, bg = '#a8241d', fg = '#fef08a') {
   ctx.strokeRect(28, 28, 456, 136);
 
   ctx.fillStyle = fg;
-  ctx.font = 'bold 74px "Microsoft JhengHei", "PingFang TC", serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(title, 256, 98);
+  if (subtitle) {
+    ctx.font = 'bold 60px "Microsoft JhengHei", "PingFang TC", serif';
+    ctx.fillText(title, 256, 78, 420);
+    ctx.font = 'bold 30px "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+    ctx.fillText(subtitle, 256, 140, 420);
+  } else {
+    ctx.font = 'bold 74px "Microsoft JhengHei", "PingFang TC", serif';
+    ctx.fillText(title, 256, 98);
+  }
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;

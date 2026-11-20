@@ -7,6 +7,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'boba',
     name: '珍珠奶茶',
+    nameEn: 'Bubble Milk Tea',
     pinyin: 'zhēn zhū nǎi chá',
     zhuyin: 'ㄓㄣ ㄓㄨ ㄋㄞˇ ㄔㄚˊ',
     focusPoint: 'n + ai（單純雙拼）',
@@ -33,6 +34,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'chicken',
     name: '雞排',
+    nameEn: 'Fried Chicken Cutlet',
     pinyin: 'jī pái',
     zhuyin: 'ㄐㄧ ㄆㄞˊ',
     focusPoint: 'j + i（介母作韻母）',
@@ -59,6 +61,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'stinky_tofu',
     name: '臭豆腐',
+    nameEn: 'Stinky Tofu',
     pinyin: 'chòu dòu fu',
     zhuyin: 'ㄔㄡˋ ㄉㄡˋ ㄈㄨˇ',
     focusPoint: 'd + ou',
@@ -85,6 +88,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'corn',
     name: '烤玉米',
+    nameEn: 'Grilled Corn',
     pinyin: 'kǎo yù mǐ',
     zhuyin: 'ㄎㄠˇ ㄩˋ ㄇㄧˇ',
     focusPoint: 'k + ao（送氣舌根音＋複韻母）',
@@ -111,6 +115,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'tanghulu',
     name: '糖葫蘆',
+    nameEn: 'Candied Fruit Skewer',
     pinyin: 'táng hú lu',
     zhuyin: 'ㄊㄤˊ ㄏㄨˊ ㄌㄨˊ',
     focusPoint: 't + ang（送氣音＋後鼻韻）',
@@ -137,6 +142,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'claw_machine',
     name: '娃娃機',
+    nameEn: 'Claw Machine',
     pinyin: 'wá wa jī',
     zhuyin: 'ㄨㄚˊ ㄨㄚˊ ㄐㄧ',
     focusPoint: 'j + i（介母作韻母）',
@@ -163,6 +169,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'goldfish',
     name: '撈魚',
+    nameEn: 'Goldfish Scooping',
     pinyin: 'lāo yú',
     zhuyin: 'ㄌㄠ ㄩˊ',
     focusPoint: 'l + ao（邊音＋複韻母）',
@@ -189,6 +196,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'pinball',
     name: '打彈珠',
+    nameEn: 'Pinball',
     audioText: '打蛋珠',
     pinyin: 'dǎ dàn zhū',
     zhuyin: 'ㄉㄚˇ ㄉㄢˋ ㄓㄨ',
@@ -216,6 +224,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'dachang',
     name: '大腸',
+    nameEn: 'Pork Intestine Sausage',
     pinyin: 'dà cháng',
     zhuyin: 'ㄉㄚˋ ㄔㄤˊ',
     focusPoint: 'ch + ang（翹舌＋後鼻韻）',
@@ -242,6 +251,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'luwei',
     name: '滷味',
+    nameEn: 'Braised Snacks',
     pinyin: 'lǔ wèi',
     zhuyin: 'ㄌㄨˇ ㄨㄟˋ',
     focusPoint: 'l + u',
@@ -268,6 +278,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'pork_ribs',
     name: '排骨酥',
+    nameEn: 'Fried Pork Ribs',
     pinyin: 'pái gǔ sū',
     zhuyin: 'ㄆㄞˊ ㄍㄨˇ ㄙㄨ',
     focusPoint: 's + u（平舌對比）',
@@ -294,6 +305,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'meatball',
     name: '肉圓',
+    nameEn: 'Taiwanese Meatball',
     pinyin: 'ròu yuán',
     zhuyin: 'ㄖㄡˋ ㄩㄢˊ',
     focusPoint: 'r + ou（翹舌音＋複韻母）',
@@ -320,6 +332,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'fish_ball',
     name: '魚蛋',
+    nameEn: 'Fish Balls',
     pinyin: 'yú dàn',
     zhuyin: 'ㄩˊ ㄉㄢˋ',
     focusPoint: 'd + an（前鼻韻母雙拼）',
@@ -346,6 +359,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'guava',
     name: '芭樂',
+    nameEn: 'Guava',
     pinyin: 'bā lè',
     zhuyin: 'ㄅㄚ ㄌㄜˋ',
     focusPoint: 'b + a（雙唇不送氣音＋單韻母）',
@@ -372,6 +386,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'fried_squid',
     name: '炸魷魚',
+    nameEn: 'Fried Squid',
     pinyin: 'zhá yóu yú',
     zhuyin: 'ㄓㄚˋ ㄧㄡˊ ㄩˊ',
     focusPoint: 'zh + a（翹舌音雙拼）',
@@ -398,6 +413,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'duck_head',
     name: '鴨頭',
+    nameEn: 'Braised Duck Head',
     pinyin: 'yā tóu',
     zhuyin: 'ㄧㄚ ㄊㄡˊ',
     focusPoint: 't + ou（送氣音＋複韻母）',
@@ -424,6 +440,7 @@ export const NIGHT_MARKET_STALLS = [
   {
     id: 'mochi',
     name: '烤麻糬',
+    nameEn: 'Grilled Mochi',
     pinyin: 'kǎo má shu',
     zhuyin: 'ㄎㄠˇ ㄇㄚˊ ㄕㄨˇ',
     focusPoint: 'sh + u（翹舌音 vs 平舌音）',
@@ -456,6 +473,7 @@ export const LEARNING_STATIONS = [
   {
     id: 'zhuyin_board',
     name: '注音對照大黑板',
+    nameEn: 'Zhuyin Chalkboard',
     subtitle: '37 符號學習圖鑑',
     animType: 'zhuyin_board',
     actionName: '切換符號發音導覽',
@@ -467,6 +485,7 @@ export const LEARNING_STATIONS = [
   {
     id: 'gold_pan',
     name: '九份溪邊淘金台',
+    nameEn: 'Jiufen Gold Panning',
     subtitle: '聲母／韻母識別挑戰 (0/37)',
     animType: 'gold_pan',
     actionName: '搖動淘金木盆',
@@ -478,6 +497,7 @@ export const LEARNING_STATIONS = [
   {
     id: 'combo_lab',
     name: '雙拼積木實驗桌',
+    nameEn: 'Zhuyin Block Lab',
     subtitle: '聲母＋韻母自由拼讀',
     animType: 'combo_lab',
     actionName: '拼合注音魔法積木',

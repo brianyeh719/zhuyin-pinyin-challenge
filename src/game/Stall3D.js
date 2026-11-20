@@ -260,7 +260,8 @@ export class Stall3D {
       this.config.iconEmoji,
       this.config.name,
       this.config.signBg || '#fff7e6',
-      this.config.awningColors?.[0] || '#d97706'
+      this.config.awningColors?.[0] || '#d97706',
+      this.config.nameEn || ''
     );
     const signGeo = new THREE.BoxGeometry(2.65, 0.88, 0.12);
     const frontMat = new THREE.MeshStandardMaterial({

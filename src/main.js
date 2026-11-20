@@ -93,7 +93,7 @@ engine = new GameEngine3D(container, {
 // 初始化 HUD 與已解鎖星號狀態
 quizUI.updateHUD();
 engine.syncClearedStalls(quizUI.state.clearedStalls);
-engine.setZone('nightmarket');
+engine.setZone('learning');
 engine.start();
 
 // 區域切換按鈕
