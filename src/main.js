@@ -3,6 +3,7 @@ import { CHARACTER_SKINS } from './game/Player3D.js';
 import { QuizUI } from './ui/QuizUI.js';
 import { ICONS } from './ui/icons.js';
 import { soundEngine } from './audio/soundEngine.js';
+import { bgmManager } from './audio/bgmManager.js';
 
 // 將靜態 HTML 中的 data-icon 槽位替換為統一 20px currentColor SVG
 document.querySelectorAll('[data-icon]').forEach((el) => {
@@ -57,6 +58,7 @@ const quizUI = new QuizUI({
 
 engine = new GameEngine3D(container, {
   onZoneChange: (zoneId) => {
+    bgmManager.playZone(zoneId);
     const isLearning = zoneId === 'learning';
     btnZoneLearning.classList.toggle('active', isLearning);
     btnZoneLearning.setAttribute('aria-selected', String(isLearning));
@@ -162,6 +164,7 @@ document.getElementById('btn-cam-reset').onclick = () => {
 btnSound.onclick = () => {
   const nextMuted = !soundEngine.muted;
   soundEngine.setMuted(nextMuted);
+  bgmManager.setMuted(nextMuted);
   soundIconSlot.innerHTML = nextMuted ? ICONS.volumeOff : ICONS.volumeOn;
   btnSound.classList.toggle('is-muted', nextMuted);
 };

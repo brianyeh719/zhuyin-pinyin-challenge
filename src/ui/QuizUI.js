@@ -6,6 +6,7 @@ import {
 } from '../data/zhuyinData.js';
 import { NIGHT_MARKET_STALLS } from '../data/stallsData.js';
 import { soundEngine } from '../audio/soundEngine.js';
+import { bgmManager } from '../audio/bgmManager.js';
 import { icon } from './icons.js';
 
 const findSymbolById = (id) => ALL_ZHUYIN_SYMBOLS.find((s) => s.id === id) || null;
@@ -97,6 +98,7 @@ export class QuizUI {
     }
     this.modalRoot.innerHTML = '';
     this.modalRoot.classList.add('hidden');
+    bgmManager.leaveLevel(); // 離開關卡：回到區域 BGM
     if (this.callbacks.onModalToggle) this.callbacks.onModalToggle(false);
   }
 
@@ -126,6 +128,7 @@ export class QuizUI {
      1. 夜市攤位挑戰視窗
      ============================================================ */
   openStallChallenge(stallConfig) {
+    bgmManager.playLevel(stallConfig.id);
     this.currentStall = stallConfig;
     this.selectedInitial = null;
     this.selectedFinal = null;
@@ -473,6 +476,7 @@ export class QuizUI {
      2. 學習區：九份溪邊淘金（37 符號識別挑戰）
      ============================================================ */
   openGoldPanning() {
+    bgmManager.playLevel('gold_pan');
     this.goldLocked = false;
     const uncollected = ALL_ZHUYIN_SYMBOLS.filter((s) => !this.state.unlockedGold.has(s.id));
     const pool = uncollected.length > 0 ? uncollected : ALL_ZHUYIN_SYMBOLS;
@@ -626,6 +630,7 @@ export class QuizUI {
      3. 學習區：37 符號全圖鑑學習牆
      ============================================================ */
   openCompendium(defaultTab = 'initials') {
+    bgmManager.playLevel('zhuyin_board');
     const renderCards = (list) =>
       list
         .map((item) => {
@@ -712,6 +717,7 @@ export class QuizUI {
      4. 學習區：自由聲韻雙拼實驗桌（零閃爍局部更新）
      ============================================================ */
   openComboLab() {
+    bgmManager.playLevel('combo_lab');
     const html = `
       <div class="quiz-card wide-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="quiz-header">
@@ -830,6 +836,7 @@ export class QuizUI {
      5. 夜市美食護照（17 攤位進度總覽與一鍵尋路）
      ============================================================ */
   openNightMarketPassport() {
+    bgmManager.playLevel('passport');
     const html = `
       <div class="quiz-card wide-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="quiz-header">
