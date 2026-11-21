@@ -33,11 +33,11 @@ export class World3D {
     };
     this.portals = {};
     this.boundsByZone = {
-      learning: { minX: -12.5, maxX: 12.5, minZ: -10.5, maxZ: 9.5 },
+      learning: { minX: -12.5, maxX: 12.5, minZ: -10.5, maxZ: 13 },
       nightmarket: { minX: -18.5, maxX: 18.5, minZ: -14.2, maxZ: 14.5 },
     };
     this.spawnByZone = {
-      learning: { x: 0, z: 6.2 },
+      learning: { x: 0, z: 11.5 },
       nightmarket: { x: 0, z: -2.2 },
     };
 
@@ -312,9 +312,29 @@ export class World3D {
     g.add(stream);
 
     // 使用 Kenney 精緻木橋模型跨越溪流
-    [-5.8, 5.8].forEach((bx) => {
+    const BRIDGE_XS = [-5.8, 5.8];
+    BRIDGE_XS.forEach((bx) => {
       this._placeProp(g, '/assets3d/forest/bridge.glb', bx, 2.4, 1.35, Math.PI / 2);
     });
+
+    // 溪流碰撞：玩家無法涉水，只能從橋面通過（橋寬約 2.3，兩側各留 1.2 的通道）
+    const RIVER_MIN_Z = 1.3;
+    const RIVER_MAX_Z = 3.5;
+    const BRIDGE_HALF_GAP = 1.2;
+    const WORLD_EDGE = 20;
+    const edges = [-WORLD_EDGE];
+    BRIDGE_XS.slice()
+      .sort((a, b) => a - b)
+      .forEach((bx) => edges.push(bx - BRIDGE_HALF_GAP, bx + BRIDGE_HALF_GAP));
+    edges.push(WORLD_EDGE);
+    for (let i = 0; i < edges.length; i += 2) {
+      colliders.push({
+        minX: edges[i],
+        maxX: edges[i + 1],
+        minZ: RIVER_MIN_Z,
+        maxZ: RIVER_MAX_Z,
+      });
+    }
 
     // 溪邊岩石、花草、燈籠與大樹
     this._placeProp(g, '/assets3d/forest/rocks-high.glb', -9.5, 2.5, 1.4, 0.4, colliders, 0.8);

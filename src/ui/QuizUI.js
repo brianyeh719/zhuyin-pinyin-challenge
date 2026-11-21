@@ -848,9 +848,9 @@ export class QuizUI {
           soundEngine.speakSyllable(result.text, result.audioKey);
         } else if (result.status === 'illegal') {
           soundEngine.playWrong();
-          setTimeout(() => soundEngine.speak('這個組合念不出來喔，國語裡沒有這個音。', 0.9), 280);
+          setTimeout(() => soundEngine.speak('這個組合念不出來。', 0.9), 280);
         } else if (result.status === 'no-sample') {
-          soundEngine.speak('這個聲調目前沒有示範音喔。', 0.9);
+          soundEngine.speak('這個聲調目前沒有示範音。', 0.9);
         }
       };
     };

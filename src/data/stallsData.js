@@ -496,8 +496,9 @@ export const LEARNING_STATIONS = [
     animType: 'zhuyin_board',
     actionName: '切換符號發音導覽',
     actionVerb: '黑板亮起注音×拼音對照表！',
-    worldX: -6.5,
-    worldZ: -3.5,
+    // 河的前（南）岸，靠近出生點
+    worldX: -2.9,
+    worldZ: 6.0,
     iconEmoji: '📖',
   },
   {
@@ -508,8 +509,9 @@ export const LEARNING_STATIONS = [
     animType: 'gold_pan',
     actionName: '搖動淘金木盆',
     actionVerb: '溪水淘出閃亮注音金砂！',
+    // 河的後（北）岸：必須走橋過河才能互動
     worldX: 0,
-    worldZ: 2.5,
+    worldZ: -2.0,
     iconEmoji: '🪙',
   },
   {
@@ -520,8 +522,9 @@ export const LEARNING_STATIONS = [
     animType: 'combo_lab',
     actionName: '拼合注音魔法積木',
     actionVerb: '聲母與韻母積木咔嚓拼合發音！',
-    worldX: 6.5,
-    worldZ: -3.5,
+    // 河的前（南）岸，靠近出生點
+    worldX: 2.9,
+    worldZ: 6.0,
     iconEmoji: '🧩',
   },
 ];
