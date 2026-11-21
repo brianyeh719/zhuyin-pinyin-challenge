@@ -1586,3 +1586,34 @@ button {
   background: var(--status-error-bg);
   box-shadow: 0 0 0 1.5px var(--status-error);
 }
+
+/* 夜市攤位：選注音／選拼音模式 */
+.badge-tag.is-pinyin {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  box-shadow: var(--ring-border);
+}
+
+.zhuyin-tile.is-pinyin {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.mode-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 10.5px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+
+.mode-chip.is-pinyin {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  box-shadow: var(--ring-border);
+}

@@ -137,6 +137,9 @@ export class QuizUI {
     const isCleared = this.state.clearedStalls.has(stallConfig.id);
     const toneObj = TONE_MARKS.find((t) => t.id === stallConfig.tone) || TONE_MARKS[0];
     const toneDisplay = toneObj.mark || 'ˉ';
+    const isPinyinMode = stallConfig.quizMode === 'pinyin'; // true = 看注音、點選拼音；false = 看拼音、點選注音
+    this.showZhuyinHint = true;
+    const hintVisible = isPinyinMode ? this.showZhuyinHint : this.showPinyinHint;
 
     const highlightedTitle = stallConfig.name
       .split('')
@@ -156,7 +159,7 @@ export class QuizUI {
           <div class="header-title-group">
             <div class="header-eyebrow">
               <span>夜市雙拼挑戰</span>
-              <span class="badge-tag">國語讀音</span>
+              <span class="badge-tag ${isPinyinMode ? 'is-pinyin' : ''}">${isPinyinMode ? '選拼音' : '選注音'}</span>
               ${isCleared ? `<span class="badge-cleared">${icon('check')} 已完成</span>` : ''}
             </div>
             <h2 id="modal-title">${stallConfig.name}</h2>
@@ -180,10 +183,10 @@ export class QuizUI {
           <div class="prompt-surface">
             <div class="word-display">
               <div class="word-chars">${highlightedTitle}</div>
-              <div class="pinyin-row ${this.showPinyinHint ? '' : 'hidden-hint'}" id="pinyin-hint-row">
-                <span>${stallConfig.pinyin}</span>
+              <div class="pinyin-row ${hintVisible ? '' : 'hidden-hint'}" id="pinyin-hint-row">
+                <span>${isPinyinMode ? stallConfig.zhuyin : stallConfig.pinyin}</span>
                 <span class="dot-sep">·</span>
-                <span>目標字「${stallConfig.targetChar}」<strong>${stallConfig.targetPinyin}</strong></span>
+                <span>目標字「${stallConfig.targetChar}」<strong>${isPinyinMode ? stallConfig.targetZhuyin : stallConfig.targetPinyin}</strong></span>
               </div>
             </div>
             <div class="prompt-tools">
@@ -192,15 +195,19 @@ export class QuizUI {
                 <span>聽國語讀音</span>
               </button>
               <button class="secondary-pill muted" id="btn-toggle-hint">
-                ${icon(this.showPinyinHint ? 'eyeOff' : 'eye')}
-                <span>${this.showPinyinHint ? '隱藏拼音' : '顯示拼音'}</span>
+                ${icon(hintVisible ? 'eyeOff' : 'eye')}
+                <span>${hintVisible ? '隱藏' : '顯示'}${isPinyinMode ? '注音' : '拼音'}</span>
               </button>
             </div>
           </div>
 
           <div class="assembly-section">
             <p class="section-caption">
-              點選下方注音積木，組合「<strong>${stallConfig.targetChar}</strong>」的聲母與韻母
+              ${
+                isPinyinMode
+                  ? `看著注音，點選下方<strong>拼音</strong>積木，拼出「<strong>${stallConfig.targetChar}</strong>」的聲母與韻母`
+                  : `點選下方<strong>注音</strong>積木，組合「<strong>${stallConfig.targetChar}</strong>」的聲母與韻母`
+              }
             </p>
             <div class="assembly-slots">
               <div class="slot-box" id="slot-initial">
@@ -225,7 +232,7 @@ export class QuizUI {
               <div class="col-title">聲母</div>
               <div class="tile-grid" id="initial-tiles">
                 ${shuffledInitials
-                  .map((sym) => `<button class="zhuyin-tile" data-type="initial" data-val="${sym}">${sym}</button>`)
+                  .map((sym) => `<button class="zhuyin-tile ${isPinyinMode ? 'is-pinyin' : ''}" data-type="initial" data-val="${sym}">${this._stallSymbolText(stallConfig, sym, 'initial')}</button>`)
                   .join('')}
               </div>
             </div>
@@ -233,7 +240,7 @@ export class QuizUI {
               <div class="col-title">韻母</div>
               <div class="tile-grid" id="final-tiles">
                 ${shuffledFinals
-                  .map((sym) => `<button class="zhuyin-tile" data-type="final" data-val="${sym}">${sym}</button>`)
+                  .map((sym) => `<button class="zhuyin-tile ${isPinyinMode ? 'is-pinyin' : ''}" data-type="final" data-val="${sym}">${this._stallSymbolText(stallConfig, sym, 'final')}</button>`)
                   .join('')}
               </div>
             </div>
@@ -262,6 +269,13 @@ export class QuizUI {
     this._openModalHtml(html);
     soundEngine.speak(stallConfig.audioText || stallConfig.name);
     this._bindStallModalEvents(stallConfig);
+  }
+
+  /** 攤位積木上顯示的文字：注音模式顯示注音符號，拼音模式顯示拼音（答案判定仍用注音符號） */
+  _stallSymbolText(stall, sym, type) {
+    if (stall.quizMode !== 'pinyin') return sym;
+    if (type === 'initial') return (ZHUYIN_INITIALS.find((x) => x.zhuyin === sym) || {}).pinyin || sym;
+    return (ZHUYIN_FINALS.find((x) => x.zhuyin === sym) || {}).shortPinyin || sym;
   }
 
   _renderWordBreakdown(stall) {
@@ -314,11 +328,19 @@ export class QuizUI {
 
     document.getElementById('btn-toggle-hint').onclick = (e) => {
       soundEngine.playClick();
-      this.showPinyinHint = !this.showPinyinHint;
+      const isPinyinMode = stall.quizMode === 'pinyin';
+      let visible;
+      if (isPinyinMode) {
+        this.showZhuyinHint = !this.showZhuyinHint;
+        visible = this.showZhuyinHint;
+      } else {
+        this.showPinyinHint = !this.showPinyinHint;
+        visible = this.showPinyinHint;
+      }
       const hintRow = document.getElementById('pinyin-hint-row');
-      hintRow.classList.toggle('hidden-hint', !this.showPinyinHint);
+      hintRow.classList.toggle('hidden-hint', !visible);
       const btn = e.currentTarget;
-      btn.innerHTML = `${icon(this.showPinyinHint ? 'eyeOff' : 'eye')}<span>${this.showPinyinHint ? '隱藏拼音' : '顯示拼音'}</span>`;
+      btn.innerHTML = `${icon(visible ? 'eyeOff' : 'eye')}<span>${visible ? '隱藏' : '顯示'}${isPinyinMode ? '注音' : '拼音'}</span>`;
     };
 
     document.getElementById('btn-trigger-stall-action').onclick = () => {
@@ -383,12 +405,12 @@ export class QuizUI {
         const val = tile.dataset.val;
         if (type === 'initial') {
           this.selectedInitial = val;
-          document.getElementById('slot-initial-val').textContent = val;
+          document.getElementById('slot-initial-val').textContent = this._stallSymbolText(stall, val, 'initial');
           document.getElementById('slot-initial').classList.add('filled');
           document.querySelectorAll('#initial-tiles .zhuyin-tile').forEach((t) => t.classList.remove('selected'));
         } else {
           this.selectedFinal = val;
-          document.getElementById('slot-final-val').textContent = val;
+          document.getElementById('slot-final-val').textContent = this._stallSymbolText(stall, val, 'final');
           document.getElementById('slot-final').classList.add('filled');
           document.querySelectorAll('#final-tiles .zhuyin-tile').forEach((t) => t.classList.remove('selected'));
         }
@@ -871,7 +893,7 @@ export class QuizUI {
             return `
               <div class="passport-item ${done ? 'done' : ''}">
                 <div class="pi-head">
-                  <strong>${s.name}</strong>
+                  <strong>${s.name}<span class="mode-chip ${s.quizMode === 'pinyin' ? 'is-pinyin' : ''}">${s.quizMode === 'pinyin' ? '選拼音' : '選注音'}</span></strong>
                   <span class="pi-status ${done ? 'is-done' : ''}">${done ? icon('check') + ' 已通關' : '未挑戰'}</span>
                 </div>
                 <div class="pi-phonetic">${s.zhuyin}</div>
