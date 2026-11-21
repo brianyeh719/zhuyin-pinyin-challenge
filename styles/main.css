@@ -1569,3 +1569,20 @@ button {
     display: none;
   }
 }
+
+/* 雙拼積木實驗桌：不合法組合 */
+.lab-preview-bar.is-illegal {
+  background: var(--status-error-bg);
+  box-shadow: 0 0 0 1.5px var(--status-error);
+}
+
+.lab-preview-bar.is-illegal .lab-zhuyin {
+  color: var(--status-error);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.tip-callout.is-illegal {
+  background: var(--status-error-bg);
+  box-shadow: 0 0 0 1.5px var(--status-error);
+}

@@ -5,6 +5,7 @@ import {
   TONE_MARKS,
 } from '../data/zhuyinData.js';
 import { NIGHT_MARKET_STALLS } from '../data/stallsData.js';
+import { lookupSyllable } from '../data/syllableData.js';
 import { soundEngine } from '../audio/soundEngine.js';
 import { bgmManager } from '../audio/bgmManager.js';
 import { icon } from './icons.js';
@@ -724,7 +725,7 @@ export class QuizUI {
           <div class="header-title-group">
             <div class="header-eyebrow"><span>九份學堂</span></div>
             <h2 id="modal-title">雙拼積木實驗桌</h2>
-            <p class="sub-focus">自由挑選聲母、韻母與聲調，即時對照拼音與夜市實戰詞彙</p>
+            <p class="sub-focus">自由挑選聲母、韻母與聲調，聽聽整個音節怎麼唸；唸不出來的組合會告訴你為什麼</p>
           </div>
           <button class="icon-close-btn" id="btn-close-modal" aria-label="關閉">${icon('close')}</button>
         </div>
@@ -736,7 +737,7 @@ export class QuizUI {
           </div>
           <button class="secondary-pill" id="btn-lab-speak">
             ${icon('volumeOn')}
-            <span>試聽組合參考音</span>
+            <span id="btn-lab-speak-label">試聽組合發音</span>
           </button>
         </div>
 
@@ -746,6 +747,7 @@ export class QuizUI {
           <div>
             <div class="col-title">聲母（21 個）</div>
             <div class="mini-tile-grid">
+              <button class="mini-tile ${this.labInitial === '' ? 'selected' : ''}" data-kind="init" data-val="">無<small>—</small></button>
               ${ZHUYIN_INITIALS.map(
                 (i) =>
                   `<button class="mini-tile ${i.zhuyin === this.labInitial ? 'selected' : ''}" data-kind="init" data-val="${i.zhuyin}">${i.zhuyin}<small>${i.pinyin}</small></button>`
@@ -755,6 +757,7 @@ export class QuizUI {
           <div>
             <div class="col-title">韻母（16 個）</div>
             <div class="mini-tile-grid">
+              <button class="mini-tile ${this.labFinal === '' ? 'selected' : ''}" data-kind="fin" data-val="">無<small>—</small></button>
               ${ZHUYIN_FINALS.map(
                 (f) =>
                   `<button class="mini-tile ${f.zhuyin === this.labFinal ? 'selected' : ''}" data-kind="fin" data-val="${f.zhuyin}">${f.zhuyin}<small>${f.shortPinyin}</small></button>`
@@ -777,36 +780,47 @@ export class QuizUI {
     this._openModalHtml(html);
 
     const updatePreview = () => {
-      const initObj = ZHUYIN_INITIALS.find((x) => x.zhuyin === this.labInitial);
-      const finObj = ZHUYIN_FINALS.find((x) => x.zhuyin === this.labFinal);
       const toneObj = TONE_MARKS.find((t) => t.id === this.labTone) || TONE_MARKS[0];
-      const combinedZhuyin = `${this.labInitial}${this.labFinal}${toneObj.mark}`;
-      const approxPinyin = `${initObj ? initObj.pinyin : ''}${finObj ? finObj.shortPinyin || finObj.pinyin : ''}`;
+      const result = lookupSyllable(this.labInitial, this.labFinal, this.labTone);
+      const illegal = result.status === 'illegal';
 
-      const matchedStalls = NIGHT_MARKET_STALLS.filter(
-        (s) => s.initial === this.labInitial && s.final === this.labFinal
-      );
-
-      document.getElementById('lab-zhuyin').textContent = combinedZhuyin;
-      document.getElementById('lab-pinyin-text').innerHTML =
-        `拼音對應 <strong>${approxPinyin}</strong> · ${toneObj.label}`;
+      document.querySelector('.lab-preview-bar').classList.toggle('is-illegal', illegal);
+      document.getElementById('lab-zhuyin').textContent = result.zhuyin || '　';
+      document.getElementById('lab-pinyin-text').innerHTML = illegal
+        ? '<strong>這個組合唸不出來</strong>'
+        : result.status === 'empty'
+          ? '請先選聲母或韻母'
+          : `拼音對應 <strong>${result.pinyin}</strong> · ${toneObj.label}`;
 
       const callout = document.getElementById('lab-matched-callout');
-      if (matchedStalls.length > 0) {
-        callout.innerHTML = `<div class="tip-callout"><strong>夜市實戰關聯</strong><p>${matchedStalls
-          .map((s) => `<strong>${s.name}</strong>（${s.targetChar} ${s.targetZhuyin}）`)
-          .join('、')}</p></div>`;
+      if (result.status === 'illegal' || result.status === 'no-sample' || result.status === 'empty') {
+        callout.innerHTML = `<div class="tip-callout ${illegal ? 'is-illegal' : ''}"><strong>${
+          illegal ? '為什麼唸不出來？' : '提示'
+        }</strong><p>${result.reason}</p></div>`;
       } else {
-        callout.innerHTML = '';
+        const matchedStalls = NIGHT_MARKET_STALLS.filter(
+          (s) => s.initial === this.labInitial && s.final === this.labFinal
+        );
+        const wordNote = result.isWord
+          ? `<p>輕聲只出現在詞語裡，所以播放示範詞「<strong style="display:inline">${result.text}</strong>」，注意最後一個字又輕又短。</p>`
+          : '';
+        const stallNote = matchedStalls.length
+          ? `<p><strong style="display:inline">夜市實戰關聯</strong>　${matchedStalls
+              .map((s) => `${s.name}（${s.targetChar} ${s.targetZhuyin}）`)
+              .join('、')}</p>`
+          : '';
+        callout.innerHTML = wordNote || stallNote ? `<div class="tip-callout">${wordNote}${stallNote}</div>` : '';
       }
 
       document.getElementById('btn-lab-speak').onclick = () => {
-        if (matchedStalls.length > 0) {
-          soundEngine.speak(matchedStalls[0].targetChar);
-        } else {
-          // 聲母＋韻母無對應整音節檔時，依序播放兩個符號的標準音檔
-          soundEngine.speakSymbol(initObj || finObj);
-          if (initObj && finObj) setTimeout(() => soundEngine.speakSymbol(finObj), 900);
+        if (result.status === 'ok') {
+          // 播放「組合後」的整個音節，而不是一個一個注音念
+          soundEngine.speakSyllable(result.text, result.audioKey);
+        } else if (result.status === 'illegal') {
+          soundEngine.playWrong();
+          setTimeout(() => soundEngine.speak('這個組合念不出來喔，國語裡沒有這個音。', 0.9), 280);
+        } else if (result.status === 'no-sample') {
+          soundEngine.speak('這個聲調目前沒有示範音喔。', 0.9);
         }
       };
     };

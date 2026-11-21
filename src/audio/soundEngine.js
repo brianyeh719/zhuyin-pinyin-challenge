@@ -3,6 +3,13 @@
  * 支援無外部資源依賴的即時遊戲音效與繁體中文（zh-TW）發音朗讀
  */
 
+/**
+ * 是否優先播放預先合成的「音節 × 聲調」音檔（public/audio/syllable/<注音><聲調>.mp3）。
+ * 預設 false：直接用瀏覽器 zh-TW 語音朗讀代表字。
+ * 跑過 tools/generate-syllable-audio.py 產生音檔後改成 true，所有裝置的發音與聲調就會一致。
+ */
+const USE_SYLLABLE_AUDIO_FILES = false;
+
 class SoundEngine {
   constructor() {
     this.ctx = null;
@@ -87,6 +94,34 @@ class SoundEngine {
       });
     } catch {
       this.speak(text);
+    }
+  }
+
+  /**
+   * 播放「組合後的整個音節」（含聲調）。
+   * text 是該音節＋聲調的代表字（輕聲則是輕聲字在詞尾的示範詞）；audioKey 對應預錄音檔檔名。
+   */
+  speakSyllable(text, audioKey) {
+    if (this.muted || !text) return;
+    const fallback = () => this.speak(text, 0.75);
+    if (!USE_SYLLABLE_AUDIO_FILES || !audioKey || typeof Audio === 'undefined') {
+      fallback();
+      return;
+    }
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      this._stopAudio();
+      const base = (import.meta.env && import.meta.env.BASE_URL) || '/';
+      const audio = new Audio(`${base}audio/syllable/${encodeURIComponent(audioKey)}.mp3`);
+      this._audio = audio;
+      audio.onerror = () => {
+        if (this._audio === audio) fallback();
+      };
+      audio.play().catch(() => {
+        if (this._audio === audio) fallback();
+      });
+    } catch {
+      fallback();
     }
   }
 

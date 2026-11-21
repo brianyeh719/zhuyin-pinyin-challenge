@@ -63,6 +63,7 @@ export const TONE_MARKS = [
   { id: '2', mark: 'ˊ', label: '二聲（陽平）', symbolDisplay: 'ˊ', example: '由中升到高' },
   { id: '3', mark: 'ˇ', label: '三聲（上聲）', symbolDisplay: 'ˇ', example: '先降後微揚' },
   { id: '4', mark: 'ˋ', label: '四聲（去聲）', symbolDisplay: 'ˋ', example: '由高急降下' },
+  { id: '5', mark: '˙', label: '輕聲', symbolDisplay: '˙', example: '又輕又短，只出現在詞語裡' },
 ];
 
 /**
