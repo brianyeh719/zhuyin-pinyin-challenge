@@ -6,6 +6,7 @@ import {
 } from '../data/zhuyinData.js';
 import { NIGHT_MARKET_STALLS } from '../data/stallsData.js';
 import { lookupSyllable } from '../data/syllableData.js';
+import { renderGoldNugget, renderGoldNuggetDefs } from './goldNuggets.js';
 import { soundEngine } from '../audio/soundEngine.js';
 import { bgmManager } from '../audio/bgmManager.js';
 import { icon } from './icons.js';
@@ -508,6 +509,8 @@ export class QuizUI {
 
     const isZhToPy = this.goldMode === 'zhuyin_to_pinyin';
     const promptSymbol = isZhToPy ? target.zhuyin : target.pinyin;
+    // 金塊造型依符號順序輪流指派：同一個符號永遠是同一種金塊
+    const nugget = renderGoldNugget(ALL_ZHUYIN_SYMBOLS.indexOf(target), promptSymbol);
 
     const optionItems = [target];
     for (const cZh of target.confusable || []) {
@@ -555,10 +558,8 @@ export class QuizUI {
 
         <div class="jiufen-stage">
           <div class="gold-nugget-display">
-            <div class="nugget-plaque">
-              <span class="nugget-symbol">${promptSymbol}</span>
-            </div>
-            <span class="nugget-caption">${target.id.toUpperCase()}</span>
+            ${nugget.html}
+            <span class="nugget-caption">${nugget.name}</span>
           </div>
 
           <div class="jiufen-choices-area">
@@ -620,6 +621,7 @@ export class QuizUI {
         if (pickedId === target.id) {
           this.goldLocked = true;
           btn.classList.add('correct');
+          document.querySelector('.gold-nugget-display')?.classList.add('is-found');
           soundEngine.playCorrect();
           const isNew = !this.state.unlockedGold.has(target.id);
           this.state.unlockedGold.add(target.id);
@@ -658,12 +660,17 @@ export class QuizUI {
       list
         .map((item) => {
           const unlocked = this.state.unlockedGold.has(item.id);
+          // 符號放在金塊上（高對比的深褐字）；拼音與例詞放在金塊下方的卡片底色上，確保清楚好讀
+          const nugget = renderGoldNugget(
+            ALL_ZHUYIN_SYMBOLS.findIndex((x) => x.id === item.id),
+            item.zhuyin,
+            { withDefs: false, glints: unlocked ? 1 : 0 }
+          );
           return `
-            <button class="symbol-book-card ${unlocked ? 'unlocked' : ''}" data-speak="${item.audioText}" data-id="${item.id}">
-              <div class="sb-top">
-                <span class="sb-zhuyin">${item.zhuyin}</span>
-                <span class="sb-status">${unlocked ? icon('check') : icon('volumeOn')}</span>
-              </div>
+            <button class="symbol-book-card nugget-card ${unlocked ? 'unlocked' : ''}" data-speak="${item.audioText}" data-id="${item.id}"
+              aria-label="${item.zhuyin}　${item.pinyin}，${unlocked ? '已解鎖' : '尚未解鎖'}，點擊聆聽發音">
+              <span class="sb-status" aria-hidden="true">${unlocked ? icon('check') : icon('volumeOn')}</span>
+              ${nugget.html}
               <div class="sb-pinyin">${item.pinyin}</div>
               <div class="sb-example">${item.example}</div>
             </button>
@@ -673,6 +680,7 @@ export class QuizUI {
 
     const html = `
       <div class="quiz-card wide-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        ${renderGoldNuggetDefs()}
         <div class="quiz-header">
           <div class="header-title-group">
             <div class="header-eyebrow">

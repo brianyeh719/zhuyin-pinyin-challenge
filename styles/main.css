@@ -1214,25 +1214,6 @@ button {
   gap: 8px;
 }
 
-.nugget-plaque {
-  width: 132px;
-  height: 132px;
-  border-radius: 26px;
-  background: radial-gradient(circle at 32% 28%, oklch(0.95 0.1 82), oklch(0.84 0.14 75));
-  box-shadow:
-    0 4px 0 oklch(0.7 0.14 66),
-    0 12px 24px -6px oklch(0.65 0.14 66 / 0.35),
-    0 0 0 1px oklch(0.72 0.14 68 / 0.5);
-  display: grid;
-  place-items: center;
-}
-
-.nugget-symbol {
-  font-size: 46px;
-  font-weight: 800;
-  color: oklch(0.28 0.06 48);
-}
-
 .nugget-caption {
   font-size: 11.5px;
   font-weight: 700;
@@ -1616,4 +1597,163 @@ button {
   background: var(--surface-subtle);
   color: var(--text-primary);
   box-shadow: var(--ring-border);
+}
+
+/* 九份淘金台：金塊 */
+.nugget-body {
+  --nw: 156px; /* 金塊寬度；其餘尺寸都依此等比縮放 */
+  position: relative;
+  width: var(--nw);
+  height: calc(var(--nw) * 0.8718);
+  filter: drop-shadow(0 calc(var(--nw) * 0.045) calc(var(--nw) * 0.04) oklch(0.5 0.1 70 / 0.35));
+}
+
+.nugget-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.nugget-symbol {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--nw) * 0.282);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.1em oklch(0.97 0.08 90 / 0.55); /* 淺金描邊，讓深色字在任何刻面上都清楚 */
+  color: oklch(0.27 0.06 48);
+  text-shadow:
+    0 1px 0 oklch(0.97 0.08 88 / 0.75),
+    0 -1px 0 oklch(0.55 0.1 65 / 0.3);
+  pointer-events: none;
+}
+
+.nugget-symbol.is-sm { font-size: calc(var(--nw) * 0.218); }
+.nugget-symbol.is-xs { font-size: calc(var(--nw) * 0.154); }
+
+.nugget-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.nugget-glint {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+  pointer-events: none;
+  animation: nugget-twinkle 2.8s ease-in-out infinite;
+}
+
+.nugget-glint.g1 { top: -4px; right: 14px; }
+.nugget-glint.g2 { top: 38%; left: -6px; width: 12px; height: 12px; animation-delay: 0.9s; }
+.nugget-glint.g3 { bottom: 4px; right: -4px; width: 13px; height: 13px; animation-delay: 1.8s; }
+
+@keyframes nugget-twinkle {
+  0%, 60%, 100% { opacity: 0; scale: 0.4; }
+  75% { opacity: 1; scale: 1.15; }
+}
+
+.gold-nugget-display.is-found .nugget-body {
+  animation: nugget-found 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gold-nugget-display.is-found .nugget-glint {
+  animation-duration: 0.9s;
+}
+
+@keyframes nugget-found {
+  0% { scale: 1; }
+  40% { scale: 1.12; }
+  100% { scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nugget-glint { animation: none; opacity: 0.85; scale: 1; }
+  .gold-nugget-display.is-found .nugget-body { animation: none; }
+}
+
+/* 金砂圖鑑：金塊卡片 */
+.symbol-book-grid:has(.nugget-card) {
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 10px;
+  max-height: 52vh;
+}
+
+.symbol-book-card.nugget-card {
+  position: relative;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  padding: 16px 8px 11px;
+}
+
+.nugget-card .nugget-body {
+  --nw: 92px;
+  margin-bottom: 4px;
+  transition: scale 180ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .nugget-card:hover .nugget-body { scale: 1.06; }
+}
+
+/* 尚未解鎖：金塊褪成淡金色，文字依然清楚可讀 */
+.nugget-card:not(.unlocked) .nugget-body {
+  filter: saturate(0.3) brightness(1.05) drop-shadow(0 4px 4px oklch(0.5 0.03 70 / 0.25));
+}
+
+.nugget-card .sb-status {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+}
+
+.nugget-card.unlocked .sb-status {
+  background: var(--accent-solid);
+}
+
+.nugget-card .sb-status .ui-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.nugget-card.unlocked .sb-status .ui-icon {
+  color: var(--accent-fg);
+}
+
+.nugget-card .sb-pinyin {
+  font-size: 14px;
+}
+
+.nugget-card .sb-example {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  text-wrap: balance;
+}
+
+@media (max-width: 680px) {
+  .symbol-book-grid:has(.nugget-card) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-height: 50vh;
+  }
+  .symbol-book-card.nugget-card {
+    padding: 12px 6px 9px;
+  }
+  .nugget-card .nugget-body {
+    --nw: 76px;
+  }
 }
